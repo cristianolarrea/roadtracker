@@ -247,6 +247,9 @@ def main(num_instances):
     global processes
     processes = []
     i = 0
+
+    with open("all_roads.csv", "w") as f:
+        f.write("road,x,y,plate,time\n")
     
     while i < num_instances:
         # time.sleep(2)
