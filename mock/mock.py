@@ -3,11 +3,7 @@ import numpy as np
 import string
 import time
 import multiprocessing as mp
-import json
 #import pickle
-import grpc
-import rpc_pb2
-import rpc_pb2_grpc
 import signal
 import sys
 
@@ -227,7 +223,7 @@ def sub(road, mode):
             cars.append(car)
     road.vehicles = cars
 
-    time.sleep(0.05)
+    #time.sleep(0.05)
 
 def signal_handler(signal, frame):
     print("Keyboard interrupt received. Terminating all processes...")
