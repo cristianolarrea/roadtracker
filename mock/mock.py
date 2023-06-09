@@ -249,7 +249,7 @@ def main(num_instances):
     i = 0
 
     with open("all_roads.csv", "w") as f:
-        f.write("road,x,y,plate,time,road_speed\n")
+        f.write("road,road_speed,x,y,plate,time\n")
     
     while i < num_instances:
         # time.sleep(2)
