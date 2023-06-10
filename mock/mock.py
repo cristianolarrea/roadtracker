@@ -64,7 +64,6 @@ def send_message(road_name, road_size, road_lanes, car, mode):
     except Exception as ex:
         return ex
 
-
 def sub(road, mode):
     global processes_cars
     processes_cars = []
@@ -100,7 +99,7 @@ def sub(road, mode):
         if random.random() < road.collision_risk and trigger_collision:
             car.x = collision_pos
             # enviar mensagem aqui???
-            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
             p_cars.start()
             processes_cars.append(p_cars)
 
@@ -110,7 +109,7 @@ def sub(road, mode):
                 if car_2.plate == plate_colided:
                     car_2.collision = True
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
@@ -121,7 +120,7 @@ def sub(road, mode):
             matrix_cars[car.x + car.speed][car.y] = car.plate
             car.x += car.speed
             # enviar mensagem aqui???
-            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
             p_cars.start()
             processes_cars.append(p_cars)
 
@@ -134,7 +133,7 @@ def sub(road, mode):
                     trigger_collision = False
                     matrix_cars[collision_pos][car.y - 1] = car.plate
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
@@ -143,7 +142,7 @@ def sub(road, mode):
                     trigger_collision = False
                     matrix_cars[collision_pos][car.y + 1] = car.plate
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
@@ -154,7 +153,7 @@ def sub(road, mode):
                     matrix_cars[car.x + car.speed][car.y] = car.plate
                     trigger_collision = False
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
                     
@@ -163,7 +162,7 @@ def sub(road, mode):
             car.x = collision_pos
             car.collision = True
             # enviar mensagem aqui???
-            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+            p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
             p_cars.start()
             processes_cars.append(p_cars)
             print("Colided", car.plate)
@@ -173,7 +172,7 @@ def sub(road, mode):
                 if car_2.plate == plate_colided:
                     car_2.collision = True
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
@@ -210,14 +209,14 @@ def sub(road, mode):
                 elif car.y == 0:
                     car.y += 1
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
                 else:
                     car.y -= 1
                     # enviar mensagem aqui???
-                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, car, mode))
+                    p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
     
@@ -232,7 +231,7 @@ def sub(road, mode):
             cars.append(car)
     road.vehicles = cars
 
-    time.sleep(0.05)
+    #time.sleep(0.05)
 
 def signal_handler(signal, frame):
     print("Keyboard interrupt received. Terminating all processes...")
@@ -256,6 +255,9 @@ def main(num_instances):
     global processes
     processes = []
     i = 0
+
+    with open("all_roads.csv", "w") as f:
+        f.write("road,road_speed,x,y,plate,time,direction\n")
     
     while i < num_instances:
         # time.sleep(2)
