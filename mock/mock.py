@@ -54,11 +54,17 @@ def car_plate():
     plate = letters + numbers
     return plate
 
-def send_message(road_name, road_size, road_lanes, car, mode):
+def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
+    # with open("all_roads.csv", "a") as f:
+    #     if mode == "forward":
+    #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
+    #     else:
+    #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
+
     if mode == "forward":
-        message = str(road_name) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "\n"
+        message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
     else:
-        message = str(road_name) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "\n"
+        message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
     try:
         future = producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
     except Exception as ex:
@@ -257,12 +263,12 @@ def main(num_instances):
     i = 0
 
     with open("all_roads.csv", "w") as f:
-        f.write("road,road_speed,x,y,plate,time,direction\n")
+        f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
     
     while i < num_instances:
         # time.sleep(2)
-        road_fwd = road("road" + str(i), 5, 150000, 5, .5, .1, 120, 60, .2, 5, 2,200)
-        road_bwd = road("road" + str(i), 5, 150000, 5, .5, .1, 120, 60, .2, 5, 2,200)
+        road_fwd = road("road" + str(i), 5, 1000, 5, .5, .1, 120, 60, .2, 5, 2,200)
+        road_bwd = road("road" + str(i), 5, 1000, 5, .5, .1, 120, 60, .2, 5, 2,200)
         p = mp.Process(target=simulate_road, args=(road_fwd, road_bwd))
         p.start()
         processes.append(p)
