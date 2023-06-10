@@ -51,9 +51,9 @@ def car_plate():
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
     with open("all_roads.csv", "a") as f:
         if mode == "forward":
-            f.write(str(road_name) + "," + str(road_speed) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "\n")
+            f.write(str(road_name) + "," + str(road_speed) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
         else:
-            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "\n")
+            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
 
 
 def sub(road, mode):
@@ -249,7 +249,7 @@ def main(num_instances):
     i = 0
 
     with open("all_roads.csv", "w") as f:
-        f.write("road,road_speed,x,y,plate,time\n")
+        f.write("road,road_speed,x,y,plate,time,direction\n")
     
     while i < num_instances:
         # time.sleep(2)
