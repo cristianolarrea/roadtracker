@@ -8,8 +8,7 @@ To run, follow the instructions below:
 
 Ensure that you have Java installed locally (Kafka uses Java). Then:
 
-1. Install the binary release of Kafka [https://www.apache.org/dyn/closer.cgi?path=/kafka/3.4.0/kafka_2.13-3.4.0.tgz](here)
-and extract with the following commands:
+1. Install the binary release of Kafka [here](https://kafka.apache.org/downloads) and extract with the following commands:
     ``tar -xzf kafka_<VERSION>.tgz ``
     ``cd kafka_<VERSION> ``
 
