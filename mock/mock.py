@@ -3,13 +3,15 @@ import numpy as np
 import string
 import time
 import multiprocessing as mp
-import json
-#import pickle
-import grpc
-import rpc_pb2
-import rpc_pb2_grpc
 import signal
 import sys
+import logging
+from kafka import KafkaProducer
+
+KAFKA_TOPIC = 'sensor-data'
+producer = KafkaProducer(acks='all')
+
+logger = logging.getLogger('kafka')
 
 class vehicle:
     def __init__(self, x, y, plate, speed):
@@ -53,11 +55,14 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, car, mode):
-    with open("all_roads.csv", "a") as f:
-        if mode == "forward":
-            f.write(str(road_name) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "\n")
-        else:
-            f.write(str(road_name) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "\n")
+    if mode == "forward":
+        message = str(road_name) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "\n"
+    else:
+        message = str(road_name) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "\n"
+    try:
+        future = producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
+    except Exception as ex:
+        return ex
 
 
 def sub(road, mode):
