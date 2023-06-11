@@ -4,7 +4,9 @@ This is a system of vehicle monitoring.
 
 To run, follow the instructions below:
 
-## Config Apache Kafka enviroment:
+## Setup the Enviroment
+
+### 1. Apache Kafka enviroment:
 
 Ensure that you have Java installed locally (Kafka uses Java). Then:
 
@@ -25,7 +27,7 @@ Ensure that you have Java installed locally (Kafka uses Java). Then:
 > Obs: the local boostrap-server "localhost:9092" is the default server and port of Kafka configurations.
 
 
-### Testing the Kafka enviroment 
+#### Testing the Kafka enviroment 
 You can test if the local Kafka enviroment is working executing a local consumer and a local producer. For this, you need to:
 1. Open a terminal that is your producer
 ```bin/kafka-console-producer.sh --topic sensor-data --bootstrap-server localhost:9092```
@@ -34,3 +36,54 @@ You can test if the local Kafka enviroment is working executing a local consumer
    ```bin/kafka-console-consumer.sh --topic sensor-data --from-beginning --bootstrap-server localhost:9092```
 
 Now, you can write messages in the producer console and see if the consumer console is receiving it.
+
+### 2. AWS Academy Enviroment
+
+For this project, we are going to use the [AWS Academy](https://awsacademy.instructure.com) platform. You need to login,
+go to Courses > Modules > Learner Lab. Then, you need to click on "Start Lab" and wait to start your AWS navigation.
+
+#### Getting and setting your AWS Credentials
+
+First of all, you need to setup your AWS Credentials. For this, you also need to [install AWS CLI](https://docs.aws.amazon.com/pt_br/cli/latest/userguide/getting-started-install.html).
+Then, on the AWS Academy page, click on "AWS Details". You will get your credentials for AWS CLI.
+![aws-details-button](docs/academy-credentials.png)
+> These credentials are private, don't share them!
+
+After getting your credentials, you need go to the folder where you install AWS CLI and copy and paste the credentials
+into ```~/.aws/credentials```. But before, for this specific project, you need to change the ```default``` header for ```computacao-escalavel```.
+Your credentials will be something like
+
+    ```
+    [computacao-escalavel]
+    aws_access_key_id=<ACCESS_KEY_ID>
+    aws_secret_access_key=<SECRET_ACCESS_KEY>
+    aws_session_token=<AWS_SECTION_TOKEN>
+    ```
+
+#### Configure the AWS S3 Bucket
+The next step is to configure the bucket where we're going to save our batches from further processing of ETL.
+You can go back to AWS Academy console e click on the green circle beside "AWS".
+![acessing-the-aws-console](docs/academy-console.png)
+
+After that, you're effectively in the AWS console. Now, search for "S3" in the search bar and click on the service.
+After that, click on "Create bucket". On the creation page, give the name "**roadtracker**" for the bucket and then click 
+on "Create Bucket" at the end of the page.
+
+Now, you're ready to run the project.
+
+## Running the modules
+
+### Mock (producer) 
+This module is responsable to generate data and send to Kafka. To run the producer (mock.py), use
+
+```
+python3 mock/mock.py
+```
+
+### Batch Generator (consumer)
+This module is responsable to receive stream data from Kafka, store in batches, and save them in AWS S3.
+To run, use
+
+```
+python3 batch_generator.py
+```
