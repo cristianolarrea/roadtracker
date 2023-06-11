@@ -9,7 +9,6 @@ import logging
 from kafka import KafkaProducer
 
 KAFKA_TOPIC = 'sensor-data'
-producer = KafkaProducer(acks='all')
 
 logger = logging.getLogger('kafka')
 
@@ -55,6 +54,7 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
+    producer = KafkaProducer()
     # with open("all_roads.csv", "a") as f:
     #     if mode == "forward":
     #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
@@ -65,10 +65,8 @@ def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
         message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
     else:
         message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
-    try:
-        future = producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
-    except Exception as ex:
-        return ex
+    producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
+    producer.close()
 
 def sub(road, mode):
     global processes_cars

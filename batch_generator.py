@@ -13,8 +13,9 @@ consumer = KafkaConsumer('sensor-data')
 def saveInS3(df):
     object = s3.Object('roadtracker', f'{time.time()}.parquet')
     object.put(Body=df.to_parquet(engine='pyarrow'))
+    print('Document sent to S3')
 
-THRESHOLD = 5
+THRESHOLD = 1000
 while True:
     df = pd.DataFrame({})
     i=0
