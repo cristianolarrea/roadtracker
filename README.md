@@ -4,6 +4,34 @@ This is a system of vehicle monitoring.
 
 To run, follow the instructions below:
 
+# IN LOCAL HOST - BATCH VERSION
+
+## Produce data (mock/mockCsv.py)
+To produce data, run 
+```
+python3 mock/mockCsv.py
+```
+
+This will write data in the file *all_roads.csv()*.
+
+## Process data (etl/BatchAnalysis.py)
+To process data, run
+```
+python3 etl/BatchAnalysis.py
+```
+This will process data and send the results in a .parquet() file into *results* folder.
+
+## Visualizing data (dash/app.py)
+To visualize data, run
+```
+python3 dash/app.py
+```
+This will create a server and show a dashboard into your *localhost:8050*. The information in this dashboard is update
+every 500ms.
+
+
+# IN AWS
+
 ## Setup the Enviroment
 
 ### 1. Apache Kafka enviroment:
@@ -70,20 +98,3 @@ After that, click on "Create bucket". On the creation page, give the name "**roa
 on "Create Bucket" at the end of the page.
 
 Now, you're ready to run the project.
-
-## Running the modules
-
-### Mock (producer) 
-This module is responsable to generate data and send to Kafka. To run the producer (mock.py), use
-
-```
-python3 mock/mock.py
-```
-
-### Batch Generator (consumer)
-This module is responsable to receive stream data from Kafka, store in batches, and save them in AWS S3.
-To run, use
-
-```
-python3 batch_generator.py
-```
