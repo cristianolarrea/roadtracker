@@ -1,6 +1,5 @@
 from dash import Dash, html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import pandas as pd
 
 # =====  Inicialização do Dash  ===== #
@@ -61,7 +60,7 @@ app.layout = html.Div([
                                     interval=500, #ms
                                     n_intervals=0
                                 )
-                            ]    
+                            ]
                         )
                     ], md=3, sm=6, xs=6),
                     dbc.Col([
@@ -149,7 +148,6 @@ def update_n_above_limit(n):
 def update_n_colision_risk(n):
     df = pd.read_parquet('../results/analysis.parquet')
     return [html.Span(df['n_colision_risk'])]
-
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
