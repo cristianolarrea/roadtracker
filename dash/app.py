@@ -1,6 +1,10 @@
 from dash import Dash, html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
+from pymongo import MongoClient
 import pandas as pd
+
+MONGO_URL = 'mongodb://localhost:27017'
+DATABASE_NAME = 'roadtracker'
 
 # =====  Inicialização do Dash  ===== #
 app = Dash(__name__, 
@@ -8,7 +12,6 @@ app = Dash(__name__,
     meta_tags=[{"charset": "utf-8"}, {"name": "viewport", "content": "width=device-width, initial-scale=1"}])
 
 server = app.server
-df = pd.read_parquet('../results/analysis.parquet')
 
 app.title = 'RoadTracker'
 
@@ -87,7 +90,15 @@ app.layout = html.Div([
                 dbc.Row([
                     dbc.Col([
                         dbc.Card(
-                            [html.H1("Veículos com risco de colisão")],
+                            [
+                                html.div(id='vehicles_colision_risk'),
+                                html.H1("Veículos com risco de colisão"),
+                                dcc.Interval(
+                                    id='vehicles_colision_risk_interval',
+                                    interval=500, #ms
+                                    n_intervals=0
+                                )
+                            ],
                             style={"height": "38vh"}
                         )
                     ])
@@ -124,30 +135,46 @@ app.layout = html.Div([
 ])
 
 # ========  Callbacks  ========= #
+def getMostRecentDocument(database, collection):
+    client = MongoClient(MONGO_URL)
+    db = client[database]
+    coll = db[collection]
+    return coll.find({})
+
 @callback(Output('n_roads', 'children'),
           Input('n_roads_interval', 'n_intervals'))
 def update_n_roads(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_roads'])]
+    # dict = getMostRecentDocument(DATABASE_NAME, '')
+    # return [html.Span(dict[''])]
+    return 32
 
 @callback(Output('n_veiculos', 'children'),
           Input('n_veiculos_interval', 'n_intervals'))
 def update_n_veiculos(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_veiculos'])]
+    # df = pd.read_parquet('../results/analysis.parquet')
+    # return [html.Span(df['n_veiculos'])]
+    return 32
 
 @callback(Output('n_above_limit', 'children'),
           Input('n_above_limit_interval', 'n_intervals'))
 def update_n_above_limit(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_above_limit'])]
-
+    # df = pd.read_parquet('../results/analysis.parquet')
+    # return [html.Span(df['n_above_limit'])]
+    return 32
 
 @callback(Output('n_colision_risk', 'children'),
           Input('n_colision_risk_interval', 'n_intervals'))
 def update_n_colision_risk(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_colision_risk'])]
+    # df = pd.read_parquet('../results/analysis.parquet')
+    # return [html.Span(df['n_colision_risk'])]
+    return 32
+
+@callback(Output('vehicle_colision_risk', 'children'),
+          Input('vehicle_colision_risk_interval', 'n_intervals'))
+def update_vehicles_colision_risk(n):
+    registers = getMostRecentDocument(MONGO_URL, 'colissionRisk.json')
+    print(registers)
+    return "heyhey"
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
