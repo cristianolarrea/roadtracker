@@ -260,7 +260,7 @@ def main(num_instances):
     processes = []
     i = 0
 
-    with open("all_roads.csv", "w") as f:
+    with open("../all_roads.csv", "w") as f:
         f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
     
     while i < num_instances:

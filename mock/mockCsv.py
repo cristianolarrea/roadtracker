@@ -49,7 +49,7 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
-    with open("all_roads.csv", "a") as f:
+    with open("../all_roads.csv", "a") as f:
         if mode == "forward":
             f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
         else:
@@ -246,7 +246,7 @@ def main(num_instances):
     processes = []
     i = 0
 
-    with open("all_roads.csv", "w") as f:
+    with open("../all_roads.csv", "w") as f:
         f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
     
     while i < num_instances:
