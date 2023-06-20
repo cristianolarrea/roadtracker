@@ -2,17 +2,27 @@ import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.functions import col, row_number
 from pyspark.sql import SparkSession
+from pyspark import SparkConf, SparkContext
 import time
 
-spark = SparkSession.builder \
-    .master("local") \
-    .appName("RoadTracker") \
-    .config("spark.driver.memory", "8g") \
-    .config("spark.executor.cores", "4") \
-    .config("spark.ui.port", "4041") \
-    .getOrCreate()
+def init_spark():
+    # use local
+    mongo_conn = "mongodb://127.0.0.1"
+    conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
+    conf.set("spark.write.connection.uri", mongo_conn)
+    conf.set("spark.mongodb.write.database", "roadtracker")
+    conf.set("spark.mongodb.write.collection", "collisionRisk")
+    
+    sc = SparkContext.getOrCreate(conf=conf)
+        
+    return SparkSession(sc) \
+        .builder \
+        .appName("RoadTracker") \
+        .getOrCreate()
 
-df = spark.read.csv("./mock\/all_roads.csv", header=True, inferSchema=True)
+spark = init_spark()
+
+df = spark.read.csv("all_roads.csv", header=True, inferSchema=True)
 
 start_time = time.time()
 
@@ -26,7 +36,7 @@ n_cars = df.select("plate").distinct().count()
 #print("Number of cars: {}".format(n_cars))
 
 
-# CALCULATE SPEED AND ACCELERATION
+# VELOCIDADE E ACELERACAO
 windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
 
 df = df.withColumn("row",row_number().over(windowDept)) \
@@ -80,7 +90,12 @@ CollectionOverSpeedLimit = df.filter(F.col("over_speed_limit") == 1) \
 # ANALISE 6: LISTA DE VEICULOS COM RISCO DE COLISAO
 # Placa e velocidade
 CollectionCollisionRisk = df.filter(F.col("collision_risk") == 1) \
-                .select("plate", "speed") \
-                .collect()
+                .select("plate", "speed")
 
+CollectionCollisionRisk.write.format("mongodb") \
+   .mode("overwrite") \
+   .option("database", "roadtracker") \
+   .option("collection", "collisionRisk") \
+   .save()
+   
 print("--- %s seconds ---" % (time.time() - start_time))
