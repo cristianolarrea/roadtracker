@@ -36,7 +36,7 @@ n_cars = df.select("plate").distinct().count()
 #print("Number of cars: {}".format(n_cars))
 
 
-# CALCULATE SPEED AND ACCELERATION
+# VELOCIDADE E ACELERACAO
 windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
 
 df = df.withColumn("row",row_number().over(windowDept)) \
