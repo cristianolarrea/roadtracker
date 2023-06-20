@@ -22,7 +22,7 @@ def init_spark():
 
 spark = init_spark()
 
-df = spark.read.csv("./etl/all_roads.csv", header=True, inferSchema=True)
+df_original = spark.read.csv("./etl/all_roads.csv", header=True, inferSchema=True)
 start_time = time.time()
 
 # ANALISE 1: NÚMERO DE RODOVIAS MONITORADAS
