@@ -1,6 +1,17 @@
 from dash import Dash, html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import pandas as pd
+from pymongo import MongoClient
+
+MONGO_URL = 'mongodb://localhost:27017'
+database = 'roadtracker'
+client = MongoClient(MONGO_URL)
+db = client[database]
+
+collection = 'analysis3'
+coll = db[collection]
+df = pd.DataFrame(list(coll.find()))
+print(df)
 
 # =====  Inicialização do Dash  ===== #
 app = Dash(__name__, 
@@ -8,7 +19,7 @@ app = Dash(__name__,
     meta_tags=[{"charset": "utf-8"}, {"name": "viewport", "content": "width=device-width, initial-scale=1"}])
 
 server = app.server
-df = pd.read_parquet('../results/analysis.parquet')
+#df = pd.read_parquet('../results/analysis.parquet')
 
 app.title = 'RoadTracker'
 
@@ -127,27 +138,39 @@ app.layout = html.Div([
 @callback(Output('n_roads', 'children'),
           Input('n_roads_interval', 'n_intervals'))
 def update_n_roads(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_roads'])]
+    collection = 'analysis1'
+    coll = db[collection]
+    df = pd.DataFrame(list(coll.find()))
+    #df = pd.read_parquet('../results/analysis.parquet')
+    return [html.Span(df['n_roads'][0])]
 
 @callback(Output('n_veiculos', 'children'),
           Input('n_veiculos_interval', 'n_intervals'))
 def update_n_veiculos(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_veiculos'])]
+    collection = 'analysis2'
+    coll = db[collection]    
+    df = pd.DataFrame(list(coll.find()))
+    #df = pd.read_parquet('../results/analysis.parquet')
+    return [html.Span(df['n_cars'][0])]
 
 @callback(Output('n_above_limit', 'children'),
           Input('n_above_limit_interval', 'n_intervals'))
 def update_n_above_limit(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_above_limit'])]
-
+    collection = 'analysis3'
+    coll = db[collection]
+    df = pd.DataFrame(list(coll.find()))
+    #df = pd.read_parquet('../results/analysis.parquet')
+    return [html.Span(df['n_cars_over_speed_limit'][0])]
 
 @callback(Output('n_colision_risk', 'children'),
           Input('n_colision_risk_interval', 'n_intervals'))
 def update_n_colision_risk(n):
-    df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_colision_risk'])]
+    collection = 'analysis4'
+    coll = db[collection]
+    df = pd.DataFrame(list(coll.find()))
+    #df = pd.read_parquet('../results/analysis.parquet')
+    return [html.Span(df['n_cars_collision_risk'][0])]
+
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
