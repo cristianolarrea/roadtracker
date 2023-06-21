@@ -7,14 +7,6 @@ MONGO_URL = 'mongodb://localhost:27017'
 database = 'roadtracker'
 client = MongoClient(MONGO_URL)
 db = client[database]
-<<<<<<< HEAD
-=======
-
-collection = 'analysis3'
-coll = db[collection]
-df = pd.DataFrame(list(coll.find()))
-print(df)
->>>>>>> 733b77a25127ef8e59ad7a2a9d762a2e9188f721
 
 # =====  Inicialização do Dash  ===== #
 app = Dash(__name__, 
@@ -168,58 +160,33 @@ app.layout = html.Div([
 @callback(Output('n_roads', 'children'),
           Input('n_roads_interval', 'n_intervals'))
 def update_n_roads(n):
-<<<<<<< HEAD
     collection = "analysis1"
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
     return [html.Span(df['n_roads'])]
-=======
-    collection = 'analysis1'
-    coll = db[collection]
-    df = pd.DataFrame(list(coll.find()))
-    #df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_roads'][0])]
->>>>>>> 733b77a25127ef8e59ad7a2a9d762a2e9188f721
 
 ######### ANALISE 2 #########
 @callback(Output('n_veiculos', 'children'),
           Input('n_veiculos_interval', 'n_intervals'))
 def update_n_veiculos(n):
-<<<<<<< HEAD
     collection = "analysis2"
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
     return [html.Span(df['n_cars'])]
-=======
-    collection = 'analysis2'
-    coll = db[collection]    
-    df = pd.DataFrame(list(coll.find()))
-    #df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_cars'][0])]
->>>>>>> 733b77a25127ef8e59ad7a2a9d762a2e9188f721
 
 ######### ANALISE 3 #########
 @callback(Output('n_above_limit', 'children'),
           Input('n_above_limit_interval', 'n_intervals'))
 def update_n_above_limit(n):
-<<<<<<< HEAD
     collection = "analysis3"
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
     return [html.Span(df['cars_over_speed_limit'])]
-=======
-    collection = 'analysis3'
-    coll = db[collection]
-    df = pd.DataFrame(list(coll.find()))
-    #df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_cars_over_speed_limit'][0])]
->>>>>>> 733b77a25127ef8e59ad7a2a9d762a2e9188f721
 
 ######### ANALISE 4 #########
 @callback(Output('n_colision_risk', 'children'),
           Input('n_colision_risk_interval', 'n_intervals'))
 def update_n_colision_risk(n):
-<<<<<<< HEAD
     collection = "analysis4"
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
@@ -296,14 +263,6 @@ def update_n_above_limit(n):
     return [html.Span(df)]
 
 ######### ANALISE ALTERNATIVA #########
-=======
-    collection = 'analysis4'
-    coll = db[collection]
-    df = pd.DataFrame(list(coll.find()))
-    #df = pd.read_parquet('../results/analysis.parquet')
-    return [html.Span(df['n_cars_collision_risk'][0])]
-
->>>>>>> 733b77a25127ef8e59ad7a2a9d762a2e9188f721
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
