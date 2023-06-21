@@ -23,22 +23,18 @@ def init_spark():
 
 spark = init_spark()
 
-dfInitial = spark.read \
-    .format('mongodb') \
-    .option("database", "roadtracker") \
-    .option("collection", "sensor-data") \
-    .load()
+LastTimestamp = 0
 
 while True:
     
-    dfLast = spark.read \
+    df_original = spark.read \
         .format('mongodb') \
         .option("database", "roadtracker") \
         .option("collection", "sensor-data") \
         .load()
 
     start_time = time.time()
-    dfBatch = dfLast.filter(f"_id > '{dfLast.select('_id').orderBy('_id', ascending=False).first()[0]}'")
+    dfBatch = df_original.filter(col("time") > LastTimestamp)
 
 
     #dfLast.explain(extended=True)
@@ -187,7 +183,7 @@ while True:
     start_time = time.time()
     # --------------------
     # ANALISE HISTORICA 1: TOP 100 VEICULOS QUE PASSARAM POR MAIS RODOVIAS
-    dfRoadCount = dfLast.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
+    dfRoadCount = df_original.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
 
     # get the top 100
     dfRoadCount = dfRoadCount.orderBy(col("road_count").desc()).limit(100)
@@ -204,7 +200,7 @@ while True:
     # --------------------
     # CALCULO TODAS AS VELOCIDADES
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
-    dfCalcs = dfLast.withColumn("row",row_number().over(windowDept))
+    dfCalcs = df_original.withColumn("row",row_number().over(windowDept))
 
     # calc all speeds
     dfCalcs = dfCalcs.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
@@ -312,4 +308,4 @@ while True:
         .option("collection", "times") \
         .save()
 
-    dfInitial = dfLast
+    LastTimestamp = df_original.select(col("time")).agg({"time": "max"}).collect()[0][0]
