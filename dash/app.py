@@ -235,7 +235,8 @@ def display_data_table(df,height,cellWidth):
              'width': '20%'},
             {'if': {'column_id': 'avg_time_to_cross'},
              'width': '30%'},
-            {'if': {'column_id': 'avg_time_to_cross'},}
+            {'if': {'column_id': 'avg_time_to_cross'},
+             'width': '35%'}
          ])
     return table
 

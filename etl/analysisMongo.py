@@ -23,35 +23,33 @@ def init_spark():
 
 spark = init_spark()
 
-schema = StructType([
-    StructField('road', StringType(), nullable=True),
-    StructField('road_speed', IntegerType(), nullable=True),
-    StructField('road_size', IntegerType(), nullable=True),
-    StructField('x', IntegerType(), nullable=True),
-    StructField('y', IntegerType(), nullable=True),
-    StructField('plate', StringType(), nullable=True),
-    StructField('time', FloatType(), nullable=True),
-    StructField('direction', IntegerType(), nullable=True)
-])
-
-# Create an empty DataFrame with the defined schema
-dfLast = spark.createDataFrame([], schema)
+dfInitial = spark.read \
+    .format('mongodb') \
+    .option("database", "roadtracker") \
+    .option("collection", "sensor-data") \
+    .load()
 
 while True:
     
-    df_original = spark.read \
+    dfLast = spark.read \
         .format('mongodb') \
         .option("database", "roadtracker") \
         .option("collection", "sensor-data") \
         .load()
 
-    dfBatch = df_original.subtract(dfLast)
-    
-    dfLast = dfBatch
+    start_time = time.time()
+    dfBatch = dfLast.filter(f"_id > '{dfLast.select('_id').orderBy('_id', ascending=False).first()[0]}'")
+
+
+    #dfLast.explain(extended=True)
+    #dfBatch.explain(extended=True)
+    #df_original.explain(extended=True)
+
+    batch_update = time.time() - start_time
+    print(f'Time to update: {batch_update}')
 
     start_time = time.time()
 
-    start_time = time.time()
     # -----------------------
     # VELOCIDADE E ACELERACAO
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
@@ -181,14 +179,15 @@ while True:
     # -----------------------
     time_analysis5 = time.time() - start_time
 
-    # ############################################
+
+# ############################################
     # ---------------- HISTORICAS ----------------
     # ############################################
 
     start_time = time.time()
     # --------------------
     # ANALISE HISTORICA 1: TOP 100 VEICULOS QUE PASSARAM POR MAIS RODOVIAS
-    dfRoadCount = df_original.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
+    dfRoadCount = dfLast.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
 
     # get the top 100
     dfRoadCount = dfRoadCount.orderBy(col("road_count").desc()).limit(100)
@@ -205,7 +204,7 @@ while True:
     # --------------------
     # CALCULO TODAS AS VELOCIDADES
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
-    dfCalcs = df_original.withColumn("row",row_number().over(windowDept))
+    dfCalcs = dfLast.withColumn("row",row_number().over(windowDept))
 
     # calc all speeds
     dfCalcs = dfCalcs.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
@@ -219,7 +218,6 @@ while True:
     # drop nulls and row column
     dfCalcs = dfCalcs.na.drop()
     # --------------------
-
 
     # --------------------
     # ANALISE HISTORICA 2: ESTATISTICAS POR RODOVIA
@@ -289,6 +287,8 @@ while True:
     # --------------------
     time_historical3 = time.time() - start_time
 
+    print(f'Size of batch: {dfBatch.count()}')
+
     # ############################################
     # ----------------- TIMES -------------------
     # ############################################
@@ -311,3 +311,5 @@ while True:
         .option("database", "roadtracker") \
         .option("collection", "times") \
         .save()
+
+    dfInitial = dfLast
