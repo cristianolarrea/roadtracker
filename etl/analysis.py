@@ -200,7 +200,7 @@ while True:
     # --------------------
     # CALCULO TODAS AS VELOCIDADES
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
-    dfCalcs = df.withColumn("row",row_number().over(windowDept))
+    dfCalcs = df_original.withColumn("row",row_number().over(windowDept))
 
     # calc all speeds
     dfCalcs = dfCalcs.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
@@ -273,7 +273,7 @@ while True:
 
     #  check which cars have more than 10 infractions
     dfInfractions = dfSpeeds.groupBy("plate").sum("change_in_speed") \
-    .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 10)
+    .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
     
     dfInfractions.write.format("mongodb") \
        .mode("overwrite") \
