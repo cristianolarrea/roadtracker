@@ -79,6 +79,7 @@ while True:
     # -----------------------
     time_analysis6 = time.time() - start_time
 
+
     start_time = time.time()
     # -----------------------
     # ANALISE 1: NÚMERO DE RODOVIAS MONITORADAS
@@ -95,6 +96,7 @@ while True:
     # -----------------------
     time_analysis1 = time.time() - start_time
 
+
     start_time = time.time()
     # -----------------------
     # ANALISE 2: NUMERO TOTAL DE VEICULOS MONITORADOS
@@ -110,6 +112,7 @@ while True:
         .save()
     # -----------------------
     time_analysis2 = time.time() - start_time
+
 
     start_time = time.time()
     # -----------------------
@@ -133,6 +136,7 @@ while True:
     # -----------------------
     time_analysis3 = time.time() - start_time
 
+
     start_time = time.time()
     # -----------------------
     # ANALISE 4: NUMERO DE VEICULOS COM RISCO DE COLISAO
@@ -149,6 +153,7 @@ while True:
         .save()
     # -----------------------
     time_analysis4 = time.time() - start_time
+
 
     start_time = time.time()
     # -----------------------
@@ -184,6 +189,7 @@ while True:
         .save()
     # --------------------
     time_historical1 = time.time() - start_time
+
 
     start_time = time.time()
     # --------------------
@@ -231,6 +237,7 @@ while True:
         .save()
     # --------------------
     time_historical2 = time.time() - start_time
+
 
     start_time = time.time()
     # --------------------
