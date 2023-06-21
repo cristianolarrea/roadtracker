@@ -4,12 +4,12 @@ body {
 }
 
 h1{
-    font-size: 18px;
+    font-size: 17px;
     font-weight: bold;
 }
 
 p{
-    font-size: 12px;
+    font-size: 10px;
     margin-bottom: 0;
 }
 
@@ -21,7 +21,7 @@ p{
 }
 
 .card-text{
-    font-size: 26px;
+    font-size: 25px;
     font-weight: bold;
 }
 

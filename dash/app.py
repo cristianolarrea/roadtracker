@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, Input, Output, callback
+from dash import Dash, html, dcc, Input, Output, callback, dash_table
 import dash_bootstrap_components as dbc
 import pandas as pd
 from pymongo import MongoClient
@@ -91,7 +91,7 @@ app.layout = html.Div([
                                     id='list_above_limit_interval',
                                     interval = 500,
                                     n_intervals=0)],
-                            style={"height": "38vh"}
+                            style={"height": "36vh"}
                         )
                     ])
                 ]),
@@ -140,16 +140,33 @@ app.layout = html.Div([
             ], md=3, sm=6),
 
             dbc.Col([
-                dbc.Card(
-                    [html.H1("Estatísticas das Rodovias"),
-                             html.Div(id='list_roadstats'),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card(
+                            [html.H1("Estatísticas das Rodovias"),
+                                     html.Div(id='list_road_stats'),
+                                     dcc.Interval(
+                                            id='list_road_stats_interval',
+                                            interval = 500,
+                                            n_intervals=0)],
+                            style={"height": "48vh"}
+                        )
+                    ])
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card(
+                            [html.H1("Tempos das Análises"),
+                             html.Div(id='list_times'),
                              dcc.Interval(
-                                    id='list_roadstats_interval',
-                                    interval = 500,
-                                    n_intervals=0)],
-                    style={"height": "90vh"}
-                )
-            ], md=3, sm=6)
+                                 id='list_times_interval',
+                                 interval = 500,
+                                 n_intervals=0)],
+                            style={"height": "38vh"}
+                        )
+                    ])
+                ])
+            ], md=4, sm=6)
         ]),
     ], fluid=True)
 ])
@@ -191,76 +208,82 @@ def update_n_colision_risk(n):
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
     return [html.Span(df['cars_collision_risk'])]
+def display_data_table(df,height):
+    data = df.to_dict('records')
+    table = dash_table.DataTable(
+         data,
+         [{"name": i, "id": i} for i in df.columns],
+         fixed_rows={'headers': True},
+         style_table={'height': height, 'overflowY': 'auto'},
+         style_header={
+             'backgroundColor': 'rgb(30, 30, 30)',
+             'color': 'white',
+             'font-size': '12px'
+         },
+         style_data={
+             'backgroundColor': 'rgb(50, 50, 50)',
+             'color': 'white',
+             'font-size': '12px'
+         })
+    return table
 
 ######### ANALISE 5 #########
 @callback(Output('list_above_limit', 'children'),
           Input('list_above_limit_interval', 'n_intervals'))
 def update_n_above_limit(n):
-    collection = "analysis5"
-    coll = db[collection]
+    coll = db["analysis5"]
     df = pd.DataFrame(list(coll.find()))
-    # remove _id column
     df = df.drop('_id', axis=1)
-    df = df.to_string(index=False, header=False)
-    # add line breaks
-    df = df.replace('\n', "<br>")
-    return [html.Span(df)]
+    df['collision_risk'].mask(df['collision_risk'] == 1, "Yes", inplace=True)
+    df['collision_risk'].mask(df['collision_risk'] == 0, "No", inplace=True)
+    return display_data_table(df, "29vh")
 
 ######### ANALISE 6 #########
 @callback(Output('list_collision_risk', 'children'),
           Input('list_collision_risk_interval', 'n_intervals'))
-def update_n_above_limit(n):
-    collection = "analysis6"
-    coll = db[collection]
+def update_risk_collision(n):
+    coll = db["analysis6"]
     df = pd.DataFrame(list(coll.find()))
-    # remove _id column
     df = df.drop('_id', axis=1)
-    df = df.to_string(index=False, header=False)
-    # add line breaks
-    df = df.replace('\n', "<br>")
-    return [html.Span(df)]
+    return display_data_table(df, "32vh")
 
 ######### HISTORICA 1 #########
 @callback(Output('list_top100', 'children'),
           Input('list_top100_interval', 'n_intervals'))
-def update_n_above_limit(n):
-    collection = "historical1"
-    coll = db[collection]
+def update_top_100(n):
+    coll = db["historical1"]
     df = pd.DataFrame(list(coll.find()))
-    # remove _id column
     df = df.drop('_id', axis=1)
-    df = df.to_string(index=False, header=False)
-    # add line breaks
-    df = df.replace('\n', "<br>")
-    return [html.Span(df)]
+    return display_data_table(df, "38vh")
 
 ######### HISTORICA 2 #########
-@callback(Output('list_roadstats', 'children'),
-          Input('list_roadstats_interval', 'n_intervals'))
-def update_n_above_limit(n):
-    collection = "historical2"
-    coll = db[collection]
+@callback(Output('list_road_stats', 'children'),
+          Input('list_road_stats_interval', 'n_intervals'))
+def update_roads_stats(n):
+    coll = db["historical2"]
     df = pd.DataFrame(list(coll.find()))
-    # remove _id column
     df = df.drop('_id', axis=1)
-    df = df.to_string(index=False, header=False)
-    # add line breaks
-    df = df.replace('\n', "<br>")
-    return [html.Span(df)]
+    df['avg_speed'] = df['avg_speed'].round(2)
+    df['avg_time_to_cross'] = df['avg_time_to_cross'].round(2)
+    return display_data_table(df, "40vh")
 
 ######### HISTORICA 3 #########
 @callback(Output('list_prohibited', 'children'),
           Input('list_prohibited_interval', 'n_intervals'))
-def update_n_above_limit(n):
-    collection = "historical3"
-    coll = db[collection]
+def update_prohibited(n):
+    coll = db["historical3"]
     df = pd.DataFrame(list(coll.find()))
-    # remove _id column
     df = df.drop('_id', axis=1)
-    df = df.to_string(index=False, header=False)
-    # add line breaks
-    df = df.replace('\n', "<br>")
-    return [html.Span(df)]
+    return display_data_table(df, "32vh")
+
+######### TEMPO ANALISES #########
+@callback(Output('list_times', 'children'),
+          Input('list_times_interval', 'n_intervals'))
+def update_times(n):
+    coll = db["times"]
+    df = pd.DataFrame(list(coll.find()))
+    df = df.drop('_id', axis=1)
+    return display_data_table(df, "32vh")
 
 ######### ANALISE ALTERNATIVA #########
 
