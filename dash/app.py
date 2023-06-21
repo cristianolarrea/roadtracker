@@ -42,7 +42,7 @@ app.layout = html.Div([
                                 )
                             ]
                         )
-                    ], md=3, sm=6, xs=6),
+                    ], md=3, sm=3, xs=6),
                     dbc.Col([
                         dbc.Card(
                             [
@@ -55,7 +55,7 @@ app.layout = html.Div([
                                 )
                             ]
                         )
-                    ], md=3, sm=6, xs=6),
+                    ], md=3, sm=3, xs=6),
                     dbc.Col([
                         dbc.Card(
                             [
@@ -68,7 +68,7 @@ app.layout = html.Div([
                                 )
                             ]
                         )
-                    ], md=3, sm=6, xs=6),
+                    ], md=3, sm=3, xs=6),
                     dbc.Col([
                         dbc.Card(
                             [html.Div(id='n_colision_risk', className="card-text"),
@@ -80,7 +80,7 @@ app.layout = html.Div([
                                 )
                             ]
                         )
-                    ], md=3, sm=6, xs=6)
+                    ], md=3, sm=3, xs=6)
                 ]),
                 dbc.Row([
                     dbc.Col([
@@ -108,7 +108,7 @@ app.layout = html.Div([
                         )
                     ])
                 ]),
-            ]),
+            ], md=5, sm=6),
 
             dbc.Col([
                 dbc.Row([
@@ -208,13 +208,13 @@ def update_n_colision_risk(n):
     coll = db[collection]
     df = pd.DataFrame(list(coll.find()))
     return [html.Span(df['cars_collision_risk'])]
-def display_data_table(df,height):
+def display_data_table(df,height,cellWidth):
     data = df.to_dict('records')
     table = dash_table.DataTable(
          data,
          [{"name": i, "id": i} for i in df.columns],
          fixed_rows={'headers': True},
-         style_table={'height': height, 'overflowY': 'auto'},
+         style_table={'height': height, 'overflowY': 'auto', 'overflowX': 'auto'},
          style_header={
              'backgroundColor': 'rgb(30, 30, 30)',
              'color': 'white',
@@ -223,8 +223,20 @@ def display_data_table(df,height):
          style_data={
              'backgroundColor': 'rgb(50, 50, 50)',
              'color': 'white',
-             'font-size': '12px'
-         })
+             'font-size': '12px',
+             'whiteSpace': 'normal',
+             'height': 'auto',
+             'minWidth': cellWidth, 'width': cellWidth, 'maxWidth': cellWidth,
+         },
+         style_cell_conditional=[
+            {'if': {'column_id': 'road'},
+             'width': '15%'},
+            {'if': {'column_id': 'avg_speed'},
+             'width': '20%'},
+            {'if': {'column_id': 'avg_time_to_cross'},
+             'width': '30%'},
+            {'if': {'column_id': 'avg_time_to_cross'},}
+         ])
     return table
 
 ######### ANALISE 5 #########
@@ -236,7 +248,7 @@ def update_n_above_limit(n):
     df = df.drop('_id', axis=1)
     df['collision_risk'].mask(df['collision_risk'] == 1, "Yes", inplace=True)
     df['collision_risk'].mask(df['collision_risk'] == 0, "No", inplace=True)
-    return display_data_table(df, "29vh")
+    return display_data_table(df, "29vh", "30%")
 
 ######### ANALISE 6 #########
 @callback(Output('list_collision_risk', 'children'),
@@ -245,7 +257,7 @@ def update_risk_collision(n):
     coll = db["analysis6"]
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "32vh")
+    return display_data_table(df, "32vh", "50%")
 
 ######### HISTORICA 1 #########
 @callback(Output('list_top100', 'children'),
@@ -254,7 +266,7 @@ def update_top_100(n):
     coll = db["historical1"]
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "38vh")
+    return display_data_table(df, "38vh", "50%")
 
 ######### HISTORICA 2 #########
 @callback(Output('list_road_stats', 'children'),
@@ -265,7 +277,7 @@ def update_roads_stats(n):
     df = df.drop('_id', axis=1)
     df['avg_speed'] = df['avg_speed'].round(2)
     df['avg_time_to_cross'] = df['avg_time_to_cross'].round(2)
-    return display_data_table(df, "40vh")
+    return display_data_table(df, "40vh", "25%")
 
 ######### HISTORICA 3 #########
 @callback(Output('list_prohibited', 'children'),
@@ -274,7 +286,7 @@ def update_prohibited(n):
     coll = db["historical3"]
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "32vh")
+    return display_data_table(df, "32vh", "50%")
 
 ######### TEMPO ANALISES #########
 @callback(Output('list_times', 'children'),
@@ -283,7 +295,8 @@ def update_times(n):
     coll = db["times"]
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "32vh")
+    df['time'] = df['time'].round(2)
+    return display_data_table(df, "32vh", "50%")
 
 ######### ANALISE ALTERNATIVA #########
 
