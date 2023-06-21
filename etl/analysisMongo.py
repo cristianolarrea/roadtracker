@@ -38,7 +38,10 @@ while True:
     print(f'Time to update: {batch_update}')
     print(f'Size of batch: {dfNew.count()}')
 
-    
+    # ############################################
+    # --------------- BASE ANALYSIS --------------
+    # ############################################
+
     # -----------------------
     # VELOCIDADE E ACELERACAO
     
