@@ -36,7 +36,6 @@ while True:
     df_original = spark.read.csv("all_roads.csv", header=True, inferSchema=True)
 
     start_time = time.time()
-
     # -----------------------
     # VELOCIDADE E ACELERACAO
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
@@ -78,8 +77,9 @@ while True:
         .option("collection", "analysis6") \
         .save()
     # -----------------------
+    time_analysis6 = time.time() - start_time
 
-
+    start_time = time.time()
     # -----------------------
     # ANALISE 1: NÚMERO DE RODOVIAS MONITORADAS
     n_roads = df_original.select("road").distinct().count()
@@ -93,8 +93,9 @@ while True:
         .option("collection", "analysis1") \
         .save()
     # -----------------------
+    time_analysis1 = time.time() - start_time
 
-
+    start_time = time.time()
     # -----------------------
     # ANALISE 2: NUMERO TOTAL DE VEICULOS MONITORADOS
     n_cars = df_original.select("plate").distinct().count()
@@ -108,8 +109,9 @@ while True:
         .option("collection", "analysis2") \
         .save()
     # -----------------------
+    time_analysis2 = time.time() - start_time
 
-
+    start_time = time.time()
     # -----------------------
     # ANALISE 3: NUMERO DE VEICULOS ACIMA DO LIMITE DE VELOCIDADE
     # add a column for the cars over the speed limit
@@ -129,8 +131,9 @@ while True:
         .option("collection", "analysis3") \
         .save()
     # -----------------------
+    time_analysis3 = time.time() - start_time
 
-
+    start_time = time.time()
     # -----------------------
     # ANALISE 4: NUMERO DE VEICULOS COM RISCO DE COLISAO
     cars_collision_risk = df.filter(F.col("collision_risk") == 1) \
@@ -145,8 +148,9 @@ while True:
         .option("collection", "analysis4") \
         .save()
     # -----------------------
+    time_analysis4 = time.time() - start_time
 
-
+    start_time = time.time()
     # -----------------------
     # ANALISE 5: LISTA DE VEICULOS ACIMA DO LIMITE DE VELOCIDADE
     # Placa, velocidade e se está com risco de colisão
@@ -159,12 +163,13 @@ while True:
         .option("collection", "analysis5") \
         .save()
     # -----------------------
-
+    time_analysis5 = time.time() - start_time
 
     # ############################################
     # ---------------- HISTORICAS ----------------
     # ############################################
 
+    start_time = time.time()
     # --------------------
     # ANALISE HISTORICA 1: TOP 100 VEICULOS QUE PASSARAM POR MAIS RODOVIAS
     dfRoadCount = df_original.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
@@ -178,8 +183,9 @@ while True:
         .option("collection", "historical1") \
         .save()
     # --------------------
+    time_historical1 = time.time() - start_time
 
-
+    start_time = time.time()
     # --------------------
     # CALCULO TODAS AS VELOCIDADES
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
@@ -224,8 +230,9 @@ while True:
         .option("collection", "historical2") \
         .save()
     # --------------------
+    time_historical2 = time.time() - start_time
 
-
+    start_time = time.time()
     # --------------------
     # ANALISE HISTORICA 3: CARROS PROIBIDOS DE CIRCULAR POR DIREÇÃO PERIGOSA
     # partition by plate and order by time (twice to have ascending and descending row numbers)
@@ -264,6 +271,27 @@ while True:
         .option("collection", "historical3") \
         .save()
     # --------------------
+    time_historical3 = time.time() - start_time
 
+    # ############################################
+    # ----------------- TIMES -------------------
+    # ############################################
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+    # create a dataframe with all times
+    dfTimes = spark.createDataFrame([
+        ("analysis1", time_analysis1),
+        ("analysis2", time_analysis2),
+        ("analysis3", time_analysis3),
+        ("analysis4", time_analysis4),
+        ("analysis5", time_analysis5),
+        ("analysis6", time_analysis6),
+        ("historical1", time_historical1),
+        ("historical2", time_historical2),
+        ("historical3", time_historical3)
+    ], ["analysis", "time"])
+
+    dfTimes.write.format("mongodb") \
+        .mode("overwrite") \
+        .option("database", "roadtracker") \
+        .option("collection", "times") \
+        .save()
