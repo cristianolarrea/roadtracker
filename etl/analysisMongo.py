@@ -23,7 +23,11 @@ def init_spark():
 spark = init_spark()
 
 while True:
-    df_original = spark.read.csv("all_roads.csv", header=True, inferSchema=True)
+    df_original = spark.read \
+        .format('mongodb') \
+        .option("database", "roadtracker") \
+        .option("collection", "sensor-data") \
+        .load()
 
 
     start_time = time.time()

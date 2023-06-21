@@ -6,6 +6,17 @@ import pandas as pd
 MONGO_URL = 'mongodb://localhost:27017'
 DATABASE_NAME = 'roadtracker'
 
+def getMostRecentDocument(database, collection):
+    client = MongoClient(MONGO_URL)
+    db = client[database]
+    coll = db[collection]
+    return coll.find({})
+
+
+registers = getMostRecentDocument(DATABASE_NAME, 'collisionRisk')
+print(registers)
+
+
 # =====  Inicialização do Dash  ===== #
 app = Dash(__name__, 
     external_stylesheets=[dbc.themes.CYBORG, "assets/style.css", dbc.icons.FONT_AWESOME], 
@@ -91,7 +102,7 @@ app.layout = html.Div([
                     dbc.Col([
                         dbc.Card(
                             [
-                                html.div(id='vehicles_colision_risk'),
+                                html.Div(id='vehicles_colision_risk'),
                                 html.H1("Veículos com risco de colisão"),
                                 dcc.Interval(
                                     id='vehicles_colision_risk_interval',
@@ -135,11 +146,6 @@ app.layout = html.Div([
 ])
 
 # ========  Callbacks  ========= #
-def getMostRecentDocument(database, collection):
-    client = MongoClient(MONGO_URL)
-    db = client[database]
-    coll = db[collection]
-    return coll.find({})
 
 @callback(Output('n_roads', 'children'),
           Input('n_roads_interval', 'n_intervals'))
@@ -169,12 +175,11 @@ def update_n_colision_risk(n):
     # return [html.Span(df['n_colision_risk'])]
     return 32
 
-@callback(Output('vehicle_colision_risk', 'children'),
+@callback(Output('vehicles_colision_risk', 'children'),
           Input('vehicle_colision_risk_interval', 'n_intervals'))
 def update_vehicles_colision_risk(n):
-    registers = getMostRecentDocument(MONGO_URL, 'colissionRisk.json')
-    print(registers)
-    return "heyhey"
+    #registers = getMostRecentDocument(MONGO_URL, 'collisionRisk')
+    return html.P("carro carro")
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
