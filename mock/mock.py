@@ -267,7 +267,7 @@ def main(num_instances):
         # time.sleep(2)
         road_speed_limit = random.randint(120, 200)
         road_size = random.randint(50000, 100000)
-        road_lanes = random.randint(5, 8)
+        road_lanes = random.randint(2, 4)
         road_fwd = road("road" + str(i), road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
         road_bwd = road("road" + str(i), road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
         p = mp.Process(target=simulate_road, args=(road_fwd, road_bwd))

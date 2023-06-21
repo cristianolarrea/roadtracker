@@ -31,6 +31,7 @@ while True:
         .option("database", "roadtracker") \
         .option("collection", "sensor-data") \
         .load()
+    dfFull.cache()
 
     start_time = time.time()
     dfNew = dfFull.filter(col("time") > LastTimestamp)
@@ -78,6 +79,8 @@ while True:
     CollisionRisk = df.filter(F.col("collision_risk") == 1) \
         .select("plate", "speed")
 
+    print('ANALISE 6:')
+    CollisionRisk.show()
     CollisionRisk.write.format("mongodb") \
         .mode("overwrite") \
         .option("database", "roadtracker") \
@@ -99,6 +102,8 @@ while True:
     # create a dataframe with the number of cars with collision risk
     cars_collision_risk = spark.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
 
+    print('ANALISE 4:')
+    cars_collision_risk.show()
     cars_collision_risk.write.format("mongodb") \
         .mode("overwrite") \
         .option("database", "roadtracker") \
@@ -338,3 +343,4 @@ while True:
 
     # Update timestamp
     LastTimestamp = dfFull.select(col("time")).agg({"time": "max"}).collect()[0][0]
+    print(LastTimestamp)

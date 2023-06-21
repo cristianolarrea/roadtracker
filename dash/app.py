@@ -244,21 +244,29 @@ def display_data_table(df,height,cellWidth):
 @callback(Output('list_above_limit', 'children'),
           Input('list_above_limit_interval', 'n_intervals'))
 def update_n_above_limit(n):
-    coll = db["analysis5"]
-    df = pd.DataFrame(list(coll.find()))
-    df = df.drop('_id', axis=1)
-    df['collision_risk'].mask(df['collision_risk'] == 1, "Yes", inplace=True)
-    df['collision_risk'].mask(df['collision_risk'] == 0, "No", inplace=True)
-    return display_data_table(df, "29vh", "30%")
+    try:
+        coll = db["analysis5"]
+        df = pd.DataFrame(list(coll.find()))
+        df = df.drop('_id', axis=1)
+        df['collision_risk'].mask(df['collision_risk'] == 1, "Yes", inplace=True)
+        df['collision_risk'].mask(df['collision_risk'] == 0, "No", inplace=True)
+        result = display_data_table(df, "29vh", "30%")
+    except:
+        result = None
+    return result
 
 ######### ANALISE 6 #########
 @callback(Output('list_collision_risk', 'children'),
           Input('list_collision_risk_interval', 'n_intervals'))
 def update_risk_collision(n):
-    coll = db["analysis6"]
-    df = pd.DataFrame(list(coll.find()))
-    df = df.drop('_id', axis=1)
-    return display_data_table(df, "32vh", "50%")
+    try:
+        coll = db["analysis6"]
+        df = pd.DataFrame(list(coll.find()))
+        df = df.drop('_id', axis=1)
+        result = display_data_table(df, "32vh", "50%")
+    except:
+        result = None
+    return result
 
 ######### HISTORICA 1 #########
 @callback(Output('list_top100', 'children'),
