@@ -3,6 +3,7 @@ from pyspark.sql.window import Window
 from pyspark.sql.functions import col, row_number, countDistinct
 from pyspark.sql import SparkSession
 from pyspark import SparkConf, SparkContext
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType
 import time
 
 def init_spark():
@@ -22,13 +23,31 @@ def init_spark():
 
 spark = init_spark()
 
+schema = StructType([
+    StructField('road', StringType(), nullable=True),
+    StructField('road_speed', IntegerType(), nullable=True),
+    StructField('road_size', IntegerType(), nullable=True),
+    StructField('x', IntegerType(), nullable=True),
+    StructField('y', IntegerType(), nullable=True),
+    StructField('plate', StringType(), nullable=True),
+    StructField('time', FloatType(), nullable=True),
+    StructField('direction', IntegerType(), nullable=True)
+])
+
+# Create an empty DataFrame with the defined schema
+dfLast = spark.createDataFrame([], schema)
+
 while True:
+    
     df_original = spark.read \
         .format('mongodb') \
         .option("database", "roadtracker") \
         .option("collection", "sensor-data") \
         .load()
 
+    dfBatch = df_original.subtract(dfLast)
+    
+    dfLast = dfBatch
 
     start_time = time.time()
 
@@ -37,7 +56,7 @@ while True:
     # VELOCIDADE E ACELERACAO
     windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
 
-    df = df_original.withColumn("row",row_number().over(windowDept)) \
+    df = dfBatch.withColumn("row",row_number().over(windowDept)) \
         .filter(col("row") <= 3)
 
     # calculo da velocidade
@@ -79,7 +98,7 @@ while True:
     start_time = time.time()
     # -----------------------
     # ANALISE 1: NÚMERO DE RODOVIAS MONITORADAS
-    n_roads = df_original.select("road").distinct().count()
+    n_roads = dfBatch.select("road").distinct().count()
 
     # create a dataframe with the number of roads
     n_roads = spark.createDataFrame([(n_roads,)], ['n_roads'])
@@ -95,7 +114,7 @@ while True:
     start_time = time.time()
     # -----------------------
     # ANALISE 2: NUMERO TOTAL DE VEICULOS MONITORADOS
-    n_cars = df_original.select("plate").distinct().count()
+    n_cars = dfBatch.select("plate").distinct().count()
 
     # create a dataframe with the number of cars
     n_cars = spark.createDataFrame([(n_cars,)], ['n_cars'])
