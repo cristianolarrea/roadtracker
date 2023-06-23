@@ -43,13 +43,14 @@ while True:
     # Filter the records until 1 minute before the last timestamp
     dfNew = dfFull.filter(F.col("time") > LimitTime)
 
-    windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
+    windowDept = Window.partitionBy("plate")\
+        .orderBy(col("time").desc())
 
     # get the last 3 records of each car
-    df = dfNew.withColumn("row", row_number().over(windowDept)) \
+    dfNew = dfNew.withColumn("row", row_number().over(windowDept)) \
         .filter(col("row") <= 3)
 
-    print(f'Size of batch: {df.count()}')
+    print(f'Size of batch: {dfNew.count()}')
 
     # ############################################
     # --------------- BASE ANALYSIS --------------
@@ -59,9 +60,9 @@ while True:
     # VELOCIDADE E ACELERACAO
     
     start_time = time.time()
-    
+
     # calculo da velocidade
-    df = df.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
+    df = dfNew.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
     # make all values positive
     df = df.withColumn("speed", F.abs(F.col("speed")))
     # calculo da aceleracao
