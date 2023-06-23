@@ -34,7 +34,7 @@ while True:
     dfFull.cache()
 
     start_time = time.time()
-    dfNew = dfFull.filter(col("time") > LastTimestamp)
+    dfNew = dfFull.filter(col("time") > LastTimestamp - )
     batch_update = time.time() - start_time
     print(f'Time to update: {batch_update}')
     print(f'Size of batch: {dfNew.count()}')
