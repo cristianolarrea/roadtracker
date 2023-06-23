@@ -252,9 +252,6 @@ def main(num_instances):
     global processes
     processes = []
     i = 0
-
-    with open("../all_roads.csv", "w") as f:
-        f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
     
     while i < num_instances:
         # time.sleep(2)
