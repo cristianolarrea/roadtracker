@@ -43,18 +43,13 @@ while True:
     # Filter the records until 1 minute before the last timestamp
     dfNew = dfFull.filter(F.col("time") > LimitTime)
 
-    # Group by plate and count the occurrences
-    dfGrouped = dfNew.groupBy("plate").count()
-    
-    # join the two dataframes
-    dfNew = dfNew.join(dfGrouped, "plate", "inner")
-    dfNew.show()
+    windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
 
-    # filter the records with more than 3 occurrences
-    dfNew = dfNew.filter(F.col("count") > 3)
+    # get the last 3 records of each car
+    df = dfNew.withColumn("row", row_number().over(windowDept)) \
+        .filter(col("row") <= 3)
 
-    print(f'Size of batch: {dfNew.count()}')
-
+    print(f'Size of batch: {df.count()}')
 
     # ############################################
     # --------------- BASE ANALYSIS --------------
@@ -65,13 +60,6 @@ while True:
     
     start_time = time.time()
     
-    windowDept = Window.partitionBy("plate")\
-        .orderBy(col("time").desc())
-
-    # get the last 3 records of each car
-    df = dfNew.withColumn("row", row_number().over(windowDept)) \
-        .filter(col("row") <= 3)
-
     # calculo da velocidade
     df = df.withColumn("speed", F.col("x") - F.lag("x", -1).over(windowDept))
     # make all values positive
