@@ -25,7 +25,7 @@ spark = init_spark()
 LastTimestamp = 0
 
 # back in time (1 minute)
-backInTime = 60000
+backInTime = 60
 
 while True:
     
@@ -289,23 +289,22 @@ while True:
     # partition by plate and order by time (twice to have ascending and descending row numbers)
     
     start_time = time.time()
-    
-    windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
-    windowDept2 = Window.partitionBy("plate").orderBy(col("time").asc())
+
+    # partition by plate and order by time (twice to have ascending and descending row numbers)
+    windowDept = Window.partitionBy("plate").orderBy(col("time").asc())
 
     # create rows columns
-    dfSpeeds = dfCalcs.withColumn("row", row_number().over(windowDept))
-    dfSpeeds = dfSpeeds.withColumn("row2", row_number().over(windowDept2))
+    dfSpeeds = dfCalcs.withColumn("row",row_number().over(windowDept))
 
-    # check where speed is greater than 120 and the previous speed was less than road_speed (that is, new infraction)
+    # check where speed is greater than road_speed and the previous speed was less than road_speed (that is, new infraction)
     dfSpeeds = dfSpeeds.withColumn("change_in_speed",
-                                   F.when(((F.col("speed") > F.col("road_speed")) & (F.lag("speed", -1).over(windowDept) <= F.lag("road_speed", -1).over(windowDept) )) , 1) \
-                                   .otherwise(0))
+                    F.when(((F.col("speed") > F.col("road_speed")) & (F.lag("speed", 1).over(windowDept) <= F.col("road_speed"))) , 1) \
+                    .otherwise(0))
 
     # check for vehicles that enter a road with speed > road_speed (infraction)
     dfSpeeds = dfSpeeds.withColumn("change_in_speed",
-                                   F.when(((F.col("speed") > F.col("road_speed")) & (F.col("row2") ==1)), 1) \
-                                   .otherwise(F.col("change_in_speed")))
+                        F.when(((F.col("speed") > F.col("road_speed")) & (F.col("row") ==1)), 1) \
+                            .otherwise(F.col("change_in_speed")))
 
     # chosen T (change it after testing)
     t = 2500000000
@@ -317,7 +316,7 @@ while True:
 
     #  check which cars have more than 10 infractions
     dfInfractions = dfSpeeds.groupBy("plate").sum("change_in_speed") \
-        .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
+    .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
 
     dfInfractions.write.format("mongodb") \
         .mode("overwrite") \
