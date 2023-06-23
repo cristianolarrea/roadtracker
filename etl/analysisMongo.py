@@ -24,6 +24,9 @@ spark = init_spark()
 
 LastTimestamp = 0
 
+# back in time (1 minute)
+backInTime = 60000
+
 while True:
     
     dfFull = spark.read \
@@ -32,12 +35,26 @@ while True:
         .option("collection", "sensor-data") \
         .load()
     dfFull.cache()
+    
+    # limit time to 1 minute before the last timestamp
+    LimitTime = LastTimestamp - backInTime
+    print(f'LimitTime: {LimitTime}')
+    
+    # Filter the records until 1 minute before the last timestamp
+    dfNew = dfFull.filter(F.col("time") > LimitTime)
 
-    start_time = time.time()
-    dfNew = dfFull.filter(col("time") > LastTimestamp - )
-    batch_update = time.time() - start_time
-    print(f'Time to update: {batch_update}')
+    # Group by plate and count the occurrences
+    dfGrouped = dfNew.groupBy("plate").count()
+    
+    # join the two dataframes
+    dfNew = dfNew.join(dfGrouped, "plate", "inner")
+    dfNew.show()
+
+    # filter the records with more than 3 occurrences
+    dfNew = dfNew.filter(F.col("count") > 3)
+
     print(f'Size of batch: {dfNew.count()}')
+
 
     # ############################################
     # --------------- BASE ANALYSIS --------------
@@ -48,9 +65,11 @@ while True:
     
     start_time = time.time()
     
-    windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
+    windowDept = Window.partitionBy("plate")\
+        .orderBy(col("time").desc())
 
-    df = dfNew.withColumn("row",row_number().over(windowDept)) \
+    # get the last 3 records of each car
+    df = dfNew.withColumn("row", row_number().over(windowDept)) \
         .filter(col("row") <= 3)
 
     # calculo da velocidade
@@ -79,8 +98,6 @@ while True:
     CollisionRisk = df.filter(F.col("collision_risk") == 1) \
         .select("plate", "speed")
 
-    print('ANALISE 6:')
-    CollisionRisk.show()
     CollisionRisk.write.format("mongodb") \
         .mode("overwrite") \
         .option("database", "roadtracker") \
@@ -88,6 +105,7 @@ while True:
         .save()
         
     time_analysis6 = time.time() - start_time
+    print(f'Time to analysis 6: {time_analysis6}')
     # -----------------------
     
     
@@ -102,8 +120,6 @@ while True:
     # create a dataframe with the number of cars with collision risk
     cars_collision_risk = spark.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
 
-    print('ANALISE 4:')
-    cars_collision_risk.show()
     cars_collision_risk.write.format("mongodb") \
         .mode("overwrite") \
         .option("database", "roadtracker") \
@@ -111,6 +127,7 @@ while True:
         .save()
         
     time_analysis4 = time.time() - start_time
+    print(f'Time to analysis 4: {time_analysis4}')
     # -----------------------
 
 
@@ -131,6 +148,7 @@ while True:
         .save()
         
     time_analysis1 = time.time() - start_time
+    print(f'Time to analysis 1: {time_analysis1}')
     # -----------------------
 
 
@@ -151,6 +169,7 @@ while True:
         .save()
         
     time_analysis2 = time.time() - start_time
+    print(f'Time to analysis 2: {time_analysis2}')
     # -----------------------
 
 
@@ -172,6 +191,7 @@ while True:
         .save()
         
     time_analysis5 = time.time() - start_time
+    print(f'Time to analysis 5: {time_analysis5}')
     # -----------------------
 
 
@@ -181,8 +201,7 @@ while True:
     
     start_time = time.time()
     
-    cars_over_speed_limit = OverSpeedLimit\
-        .count()
+    cars_over_speed_limit = OverSpeedLimit.count()
 
     # create a dataframe with the number of cars over the speed limit
     cars_over_speed_limit = spark.createDataFrame([(cars_over_speed_limit,)], ['cars_over_speed_limit'])
@@ -194,6 +213,7 @@ while True:
         .save()
         
     time_analysis3 = time.time() - start_time
+    print(f'Time to analysis 3: {time_analysis3}')
     # -----------------------
 
 
@@ -217,6 +237,7 @@ while True:
         .save()
     
     time_historical1 = time.time() - start_time
+    print(f'Time to historical 1: {time_historical1}')
     # --------------------
 
 
@@ -270,6 +291,7 @@ while True:
         .save()
         
     time_historical2 = time.time() - start_time
+    print(f'Time to historical 2: {time_historical2}')
     # --------------------
 
 
@@ -283,8 +305,8 @@ while True:
     windowDept2 = Window.partitionBy("plate").orderBy(col("time").asc())
 
     # create rows columns
-    dfSpeeds = dfCalcs.withColumn("row",row_number().over(windowDept))
-    dfSpeeds = dfSpeeds.withColumn("row2",row_number().over(windowDept2))
+    dfSpeeds = dfCalcs.withColumn("row", row_number().over(windowDept))
+    dfSpeeds = dfSpeeds.withColumn("row2", row_number().over(windowDept2))
 
     # check where speed is greater than 120 and the previous speed was less than road_speed (that is, new infraction)
     dfSpeeds = dfSpeeds.withColumn("change_in_speed",
@@ -315,6 +337,7 @@ while True:
         .save()
         
     time_historical3 = time.time() - start_time
+    print(f'Time to historical 3: {time_historical3}')
     # --------------------
     
 
@@ -343,4 +366,4 @@ while True:
 
     # Update timestamp
     LastTimestamp = dfFull.select(col("time")).agg({"time": "max"}).collect()[0][0]
-    print(LastTimestamp)
+    print(f'Last timestamp: {LastTimestamp}')
