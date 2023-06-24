@@ -3,10 +3,24 @@ from pyspark.sql.window import Window
 from pyspark.sql.functions import col, row_number, countDistinct
 from pyspark.sql import SparkSession
 from pyspark import SparkConf, SparkContext
+import pyspark
 import time
+import findspark
+findspark.init()
 
-def init_spark():
-    # use local
+def init_spark():        
+    return pyspark.sql.SparkSession \
+        .builder \
+        .appName("RoadTracker") \
+        .getOrCreate() \
+        .read \
+        .format("jdbc") \
+        .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
+        .option("dbtable", "vasco") \
+        .option("tempdir", "s3n://path/for/temp/data")
+
+def init_mongo():
+    #use local
     mongo_conn = "mongodb://127.0.0.1"
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.write.connection.uri", mongo_conn)
@@ -14,12 +28,14 @@ def init_spark():
     conf.set("spark.mongodb.write.collection", "collisionRisk")
     
     sc = SparkContext.getOrCreate(conf=conf)
-        
+
     return SparkSession(sc) \
         .builder \
         .appName("RoadTracker") \
         .getOrCreate()
 
+
+mongo = init_mongo()
 spark = init_spark()
 
 LastTimestamp = 0
@@ -29,19 +45,26 @@ backInTime = 60
 
 while True:
     
-    dfFull = spark.read \
-        .format('mongodb') \
-        .option("database", "roadtracker") \
-        .option("collection", "sensor-data") \
-        .load()
+    dfFull = spark.load()
     dfFull.cache()
     
+    # speed_limit as speed_limit 
+    dfFull = dfFull.withColumnRenamed("speed_limit", "road_speed")
+    dfFull = dfFull.withColumnRenamed("road_id", "road")
+    dfFull = dfFull.withColumnRenamed("timestamp", "time")
+
     # limit time to 1 minute before the last timestamp
     LimitTime = LastTimestamp - backInTime
     print(f'LimitTime: {LimitTime}')
     
     # Filter the records until 1 minute before the last timestamp
-    dfNew = dfFull.filter(F.col("time") > LimitTime)
+    dfNew = dfFull.filter(F.col("timestamp") > LimitTime)
+
+    # get distinct plates
+    plates = dfNew.select("plate").distinct()
+
+    # get the last 3 records of each car in plates from dfFull
+    dfNewRoad = dfFull.join(plates, "plate", "inner")
 
     windowDept = Window.partitionBy("plate")\
         .orderBy(col("time").desc())
@@ -87,12 +110,21 @@ while True:
     CollisionRisk = df.filter(F.col("collision_risk") == 1) \
         .select("plate", "speed")
 
-    CollisionRisk.write.format("mongodb") \
+    mongo.createDataFrame(CollisionRisk.rdd) \
+        .write \
+        .format("mongo") \
         .mode("overwrite") \
         .option("database", "roadtracker") \
         .option("collection", "analysis6") \
         .save()
-        
+    
+    # CollisionRisk.write.format("mongodb") \
+    #     .mode("overwrite") \
+    #     .option("database", "roadtracker") \
+    #     .option("collection", "analysis6") \
+    #     .save()
+
+
     time_analysis6 = time.time() - start_time
     print(f'Time to analysis 6: {time_analysis6}')
     # -----------------------
@@ -107,7 +139,7 @@ while True:
         .count()
 
     # create a dataframe with the number of cars with collision risk
-    cars_collision_risk = spark.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
+    cars_collision_risk = mongo.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
 
     cars_collision_risk.write.format("mongodb") \
         .mode("overwrite") \
@@ -128,7 +160,7 @@ while True:
     n_roads = dfNew.select("road").distinct().count()
 
     # create a dataframe with the number of roads
-    n_roads = spark.createDataFrame([(n_roads,)], ['n_roads'])
+    n_roads = mongo.createDataFrame([(n_roads,)], ['n_roads'])
 
     n_roads.write.format("mongodb") \
         .mode("overwrite") \
@@ -149,7 +181,7 @@ while True:
     n_cars = dfNew.select("plate").distinct().count()
 
     # create a dataframe with the number of cars
-    n_cars = spark.createDataFrame([(n_cars,)], ['n_cars'])
+    n_cars = mongo.createDataFrame([(n_cars,)], ['n_cars'])
 
     n_cars.write.format("mongodb") \
         .mode("overwrite") \
@@ -193,7 +225,7 @@ while True:
     cars_over_speed_limit = OverSpeedLimit.count()
 
     # create a dataframe with the number of cars over the speed limit
-    cars_over_speed_limit = spark.createDataFrame([(cars_over_speed_limit,)], ['cars_over_speed_limit'])
+    cars_over_speed_limit = mongo.createDataFrame([(cars_over_speed_limit,)], ['cars_over_speed_limit'])
 
     cars_over_speed_limit.write.format("mongodb") \
         .mode("overwrite") \
@@ -334,7 +366,7 @@ while True:
     # ############################################
 
     # create a dataframe with all times
-    dfTimes = spark.createDataFrame([
+    dfTimes = mongo.createDataFrame([
         ("analysis1", time_analysis1),
         ("analysis2", time_analysis2),
         ("analysis3", time_analysis3),
