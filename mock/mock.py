@@ -116,7 +116,6 @@ def sub(road, mode):
                     processes_cars.append(p_cars)
 
 
-
         # se nao houver, só atualiza a posicao do carro
         if not trigger_collision:
             matrix_cars[car.x + car.speed][car.y] = car.plate
@@ -131,18 +130,18 @@ def sub(road, mode):
         if trigger_collision and car.collision == False:
             # se conseguiu trocar de pista, nao ha mais risco de colisao
             if car.y != 0: # para a esquerda
-                if matrix_cars[collision_pos][car.y - 1] != "XXXXXX":
+                if matrix_cars[car.x + car.speed][car.y - 1] == "XXXXXX":
                     trigger_collision = False
-                    matrix_cars[collision_pos][car.y - 1] = car.plate
+                    matrix_cars[car.x + car.speed][car.y - 1] = car.plate
                     # enviar mensagem aqui
                     p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
                     processes_cars.append(p_cars)
 
             if car.y != road.lanes-1: # para a direita
-                if matrix_cars[collision_pos][car.y + 1] != "XXXXXX": #and trigger_collision:
+                if matrix_cars[car.x + car.speed][car.y + 1] == "XXXXXX": #and trigger_collision:
                     trigger_collision = False
-                    matrix_cars[collision_pos][car.y + 1] = car.plate
+                    matrix_cars[car.x + car.speed][car.y + 1] = car.plate
                     # enviar mensagem aqui
                     p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
@@ -207,8 +206,10 @@ def sub(road, mode):
             if car.speed > 0:
                 if car.y != 0 and car.y != road.lanes -1:
                     car.y = random.choice([car.y+1,car.y-1])
+                    car.x += car.speed
                 elif car.y == 0:
                     car.y += 1
+                    car.x += car.speed
                     # enviar mensagem aqui
                     p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
                     p_cars.start()
