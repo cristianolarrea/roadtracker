@@ -1,13 +1,22 @@
+import pyspark
+from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.functions import col, row_number, countDistinct
-from pyspark.sql import SparkSession
 from pyspark import SparkConf, SparkContext
-import sys
 import time
 
-def init_spark():
-    # use local
+def initRS():
+    spark = SparkSession.builder \
+        .appName("roadTracker") \
+        .getOrCreate()
+    
+    return spark.read.format("jdbc") \
+        .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
+        .option("dbtable", "vasco") \
+        .option("tempdir", "s3n://path/for/temp/data")
+
+def initMongo():
     mongo_conn = "mongodb://127.0.0.1"
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.write.connection.uri", mongo_conn)
@@ -18,23 +27,18 @@ def init_spark():
         
     return SparkSession(sc) \
         .builder \
-        .appName("RoadTracker") \
+        .appName("analysisOutput") \
         .getOrCreate()
 
-spark = init_spark()
+spark = initRS()
 
 LastTimeStamp = 0
 backInTime = 60
 
 try:
     while True:
-
-        dfFull = spark.read.format("jdbc") \
-            .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
-            .option("dbtable", "vasco") \
-            .option("tempdir", "s3n://path/for/temp/data") \
-            .load() \
-            .cache()
+        
+        dfFull = spark.load().cache()
         dfFull = dfFull.withColumnRenamed("road_id", "road")
         dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
         dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
@@ -42,14 +46,15 @@ try:
         dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
         dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
         dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
+        
         # limit time to 1 minute before the last timestamp
-        LimitTime = LastTimeStamp - backInTime
+        LimitTime = LastTimestamp - backInTime
         print(f'LimitTime: {LimitTime}')
-
+        
         # Filter the records until 1 minute before the last timestamp
         dfNew = dfFull.filter(F.col("time") > LimitTime)
 
-        windowDept = Window.partitionBy("plate") \
+        windowDept = Window.partitionBy("plate")\
             .orderBy(col("time").desc())
 
         # get the last 3 records of each car
@@ -64,7 +69,7 @@ try:
 
         # -----------------------
         # VELOCIDADE E ACELERACAO
-
+        
         start_time = time.time()
 
         # calculo da velocidade
@@ -82,9 +87,9 @@ try:
         windowDept = Window.partitionBy("road", "y").orderBy("x")
         # calcula o risco de colisao fazendo posicao + (velocidade * direcao) + (aceleracao * direcao)
         df = df.withColumn("collision_risk",
-                           F.when(F.col("direction") == 1,
-                                  F.when((F.col("x") + F.col("speed") + F.col("acc")) > (F.lag("x", -1).over(windowDept) + F.lag("speed", -1).over(windowDept) + F.lag("acc",-1).over(windowDept)), 1).otherwise(0)) \
-                           .otherwise(F.when((F.col("x") - F.col("speed") - F.col("acc")) < (F.lag("x", 1).over(windowDept) - F.lag("speed", 1).over(windowDept) - F.lag("acc", 1).over(windowDept)), 1).otherwise(0)))
+                        F.when(F.col("direction") == 1,
+                                F.when((F.col("x") + F.col("speed") + F.col("acc")) > (F.lag("x", -1).over(windowDept) + F.lag("speed", -1).over(windowDept) + F.lag("acc",-1).over(windowDept)), 1).otherwise(0)) \
+                        .otherwise(F.when((F.col("x") - F.col("speed") - F.col("acc")) < (F.lag("x", 1).over(windowDept) - F.lag("speed", 1).over(windowDept) - F.lag("acc", 1).over(windowDept)), 1).otherwise(0)))
         # -----------------------
 
         # ----------------------- PRIORIDADE!
@@ -98,28 +103,29 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "analysis6") \
             .save()
-
+            
         time_analysis6 = time.time() - start_time
         print(f'Time to analysis 6: {time_analysis6}')
         # -----------------------
-
-
+        
+        
         # -----------------------
         # ANALISE 4: NUMERO DE VEICULOS COM RISCO DE COLISAO
-
+        
         start_time = time.time()
-
+        
         cars_collision_risk = CollisionRisk \
             .count()
 
         # create a dataframe with the number of cars with collision risk
-        cars_collision_risk = spark.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
+        mongo = initMongo()
+        cars_collision_risk = mongo.createDataFrame([(cars_collision_risk,)], ['cars_collision_risk'])
         cars_collision_risk.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "analysis4") \
             .save()
-
+            
         time_analysis4 = time.time() - start_time
         print(f'Time to analysis 4: {time_analysis4}')
         # -----------------------
@@ -127,20 +133,20 @@ try:
 
         # -----------------------
         # ANALISE 1: NÚMERO DE RODOVIAS MONITORADAS
-
+        
         start_time = time.time()
-
+        
         n_roads = dfNew.select("road").distinct().count()
 
         # create a dataframe with the number of roads
-        n_roads = spark.createDataFrame([(n_roads,)], ['n_roads'])
+        n_roads = mongo.createDataFrame([(n_roads,)], ['n_roads'])
 
         n_roads.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "analysis1") \
             .save()
-
+            
         time_analysis1 = time.time() - start_time
         print(f'Time to analysis 1: {time_analysis1}')
         # -----------------------
@@ -148,20 +154,20 @@ try:
 
         # -----------------------
         # ANALISE 2: NUMERO TOTAL DE VEICULOS MONITORADOS
-
+        
         start_time = time.time()
-
+        
         n_cars = dfNew.select("plate").distinct().count()
 
         # create a dataframe with the number of cars
-        n_cars = spark.createDataFrame([(n_cars,)], ['n_cars'])
+        n_cars = mongo.createDataFrame([(n_cars,)], ['n_cars'])
 
         n_cars.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "analysis2") \
             .save()
-
+            
         time_analysis2 = time.time() - start_time
         print(f'Time to analysis 2: {time_analysis2}')
         # -----------------------
@@ -170,11 +176,11 @@ try:
         # -----------------------
         # ANALISE 5: LISTA DE VEICULOS ACIMA DO LIMITE DE VELOCIDADE
         # Placa, velocidade e se está com risco de colisão
-
+        
         start_time = time.time()
-
+        
         df = df.withColumn("over_speed_limit", F.when(F.col("speed") > F.col("road_speed"), 1).otherwise(0))
-
+        
         OverSpeedLimit = df.filter(F.col("over_speed_limit") == 1) \
             .select("plate", "speed", "collision_risk")
 
@@ -183,7 +189,7 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "analysis5") \
             .save()
-
+            
         time_analysis5 = time.time() - start_time
         print(f'Time to analysis 5: {time_analysis5}')
         # -----------------------
@@ -192,20 +198,20 @@ try:
         # -----------------------
         # ANALISE 3: NUMERO DE VEICULOS ACIMA DO LIMITE DE VELOCIDADE
         # add a column for the cars over the speed limit
-
+        
         start_time = time.time()
-
+        
         cars_over_speed_limit = OverSpeedLimit.count()
 
         # create a dataframe with the number of cars over the speed limit
-        cars_over_speed_limit = spark.createDataFrame([(cars_over_speed_limit,)], ['cars_over_speed_limit'])
+        cars_over_speed_limit = mongo.createDataFrame([(cars_over_speed_limit,)], ['cars_over_speed_limit'])
 
         cars_over_speed_limit.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "analysis3") \
             .save()
-
+            
         time_analysis3 = time.time() - start_time
         print(f'Time to analysis 3: {time_analysis3}')
         # -----------------------
@@ -217,7 +223,7 @@ try:
 
         # --------------------
         # ANALISE HISTORICA 1: TOP 100 VEICULOS QUE PASSARAM POR MAIS RODOVIAS
-
+        
         start_time = time.time()
         dfRoadCount = dfFull.groupBy("plate").agg(countDistinct('road')).withColumnRenamed("count(road)", "road_count")
 
@@ -229,7 +235,7 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "historical1") \
             .save()
-
+        
         time_historical1 = time.time() - start_time
         print(f'Time to historical 1: {time_historical1}')
         # --------------------
@@ -237,9 +243,9 @@ try:
 
         # --------------------
         # CALCULO TODAS AS VELOCIDADES
-
+        
         start_time = time.time()
-
+        
         windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
         dfCalcs = dfFull.withColumn("row",row_number().over(windowDept))
 
@@ -265,10 +271,10 @@ try:
 
         # calculate avg time to cross
         dfStats = dfStats.withColumn("avg_time_to_cross", F.col( "road_size") / F.col("avg_speed"))
-
+        
         # select needed columns
         dfStats = dfStats.select("road", "avg_speed", "avg_time_to_cross")
-
+        
         # get rows where speed = 0 and acc = 0 (collisions)
         dfCollisions = dfCalcs.filter((F.col("speed") == 0) & (F.col("acc") == 0))
 
@@ -283,7 +289,7 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "historical2") \
             .save()
-
+            
         time_historical2 = time.time() - start_time
         print(f'Time to historical 2: {time_historical2}')
         # --------------------
@@ -292,7 +298,7 @@ try:
         # --------------------
         # ANALISE HISTORICA 3: CARROS PROIBIDOS DE CIRCULAR POR DIREÇÃO PERIGOSA
         # partition by plate and order by time (twice to have ascending and descending row numbers)
-
+        
         start_time = time.time()
 
         # partition by plate and order by time (twice to have ascending and descending row numbers)
@@ -303,13 +309,13 @@ try:
 
         # check where speed is greater than road_speed and the previous speed was less than road_speed (that is, new infraction)
         dfSpeeds = dfSpeeds.withColumn("change_in_speed",
-                                       F.when(((F.col("speed") > F.col("road_speed")) & (F.lag("speed", 1).over(windowDept) <= F.col("road_speed"))) , 1) \
-                                       .otherwise(0))
+                        F.when(((F.col("speed") > F.col("road_speed")) & (F.lag("speed", 1).over(windowDept) <= F.col("road_speed"))) , 1) \
+                        .otherwise(0))
 
         # check for vehicles that enter a road with speed > road_speed (infraction)
         dfSpeeds = dfSpeeds.withColumn("change_in_speed",
-                                       F.when(((F.col("speed") > F.col("road_speed")) & (F.col("row") ==1)), 1) \
-                                       .otherwise(F.col("change_in_speed")))
+                            F.when(((F.col("speed") > F.col("road_speed")) & (F.col("row") ==1)), 1) \
+                                .otherwise(F.col("change_in_speed")))
 
         # chosen T (change it after testing)
         t = 2500000000
@@ -321,25 +327,25 @@ try:
 
         #  check which cars have more than 10 infractions
         dfInfractions = dfSpeeds.groupBy("plate").sum("change_in_speed") \
-            .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
+        .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
 
         dfInfractions.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "historical3") \
             .save()
-
+            
         time_historical3 = time.time() - start_time
         print(f'Time to historical 3: {time_historical3}')
         # --------------------
-
+        
 
         # ############################################
         # ----------------- TIMES -------------------
         # ############################################
 
         # create a dataframe with all times
-        dfTimes = spark.createDataFrame([
+        dfTimes = mongo.createDataFrame([
             ("analysis1", time_analysis1),
             ("analysis2", time_analysis2),
             ("analysis3", time_analysis3),
@@ -359,8 +365,9 @@ try:
 
         # Update timestamp
         LastTimestamp = dfFull.select(col("time")).agg({"time": "max"}).collect()[0][0]
-        print(f'Last timestamp: {LastTimestamp}')
+        print(f'Last timestamp: {LastTimestamp}')       
 
 except KeyboardInterrupt:
     print('Interrupted')
+    import sys
     sys.exit(0)
