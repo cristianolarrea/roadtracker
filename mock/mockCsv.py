@@ -65,12 +65,10 @@ def sub(road, mode):
     cars.sort(key = calc_speed) # ordena os carros por velocidade
 
     for car in cars:
-        print(car.x)
         # atualiza o contador de ciclos para remover a colisão
         if car.collision:
             car.cicles_to_remove_collision += 1
             if car.cicles_to_remove_collision == road.cicles_to_remove_collision:
-                print("Removed", car.plate)
                 cars.remove(car)
                 continue
 
@@ -155,7 +153,6 @@ def sub(road, mode):
             p_cars = mp.Process(target=send_message, args=(road.name, road.size, road.lanes, road.max_speed, car, mode))
             p_cars.start()
             processes_cars.append(p_cars)
-            print("Colided", car.plate)
 
             # define que o carro em que ele bateu também colidiu
             for car_2 in cars:
@@ -232,12 +229,8 @@ def signal_handler(signal, frame):
 def simulate_road(road_fwd, road_bwd):
 
     while True:
-        print("================")
         tempo = int(1000*time.time())
-        print(time.time())
         tempo = str(tempo)
-        print(tempo)
-        print("==============")
         sub(road_fwd, "forward")
         sub(road_bwd, "backward")
 
