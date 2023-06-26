@@ -1,15 +1,14 @@
 import redshift_connector
 
-cluster_identifier = 'mycluster'
 #Creating Redshift connection
+cluster_identifier = 'roadtracker'
 conn = redshift_connector.connect(
-    iam=True,
-    region='us-east-1',
-    access_key_id="",
-    secret_access_key="",
-    session_token="",
-    auth_profile="",
-    db_user="",
+    host='roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com',
+    port=5439,
+    user='admin',
+    password='roadTracker1',
+    database='road-tracker',
+    cluster_identifier=cluster_identifier
 )
 
 #create table for sensor data
