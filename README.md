@@ -43,27 +43,27 @@ Now, you can write messages in the producer console and see if the consumer cons
 To run locally, you need to have mongodb installed. If not, you can follow the [documentation](https://www.mongodb.com/docs/manual/installation/)
 to install it.
 
-## Produce data (local/mock.py)
+## Produce data (local/mock/mock.py)
 To produce data, run 
 
 python3 local/mock.py
 
 This will send data to Kafka broker.
 
-## Send data to mongodb (local/subscribe.py)
+## Send data to mongodb (local/subscribeMongo.py)
 To subscribe data to the database data, run
 
 python3 local/subscribe.py
 
 This will receive data from Kafka broker, acting as consumer, and sending data to the local MongoDB.
 
-## Process data (local/analysis.py)
+## Process data (local/etl/analysisLocal.py)
 To process data, run
 
 python3 local/analysis.py
 
 
-## Visualizing data (dash/app.py)
+## Visualizing data (local/dash/app.py)
 To visualize data, run
 
 python3 local/dash.py
