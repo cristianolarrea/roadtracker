@@ -50,7 +50,7 @@ python3 local/mock/mock.py
 ```
 This will send data to Kafka broker.
 
-## Send data to mongodb
+## Send data to mongodb 
 To subscribe data to the database data, run
 ```
 python3 local/subscribe.py
