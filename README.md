@@ -43,31 +43,31 @@ Now, you can write messages in the producer console and see if the consumer cons
 To run locally, you need to have mongodb installed. If not, you can follow the [documentation](https://www.mongodb.com/docs/manual/installation/)
 to install it.
 
-## Produce data (local/mock.py)
+## Produce data
 To produce data, run 
-
-python3 local/mock.py
-
+```
+python3 local/mock/mock.py
+```
 This will send data to Kafka broker.
 
-## Send data to mongodb (local/subscribe.py)
+## Send data to mongodb
 To subscribe data to the database data, run
-
+```
 python3 local/subscribe.py
-
+```
 This will receive data from Kafka broker, acting as consumer, and sending data to the local MongoDB.
 
-## Process data (local/analysis.py)
+## Process data
 To process data, run
+```
+python3 local/etl/analysis.py
+```
 
-python3 local/analysis.py
-
-
-## Visualizing data (dash/app.py)
+## Visualizing data
 To visualize data, run
-
-python3 local/dash.py
-
+```
+python3 local/dash/dash.py
+```
 This will create a server and show a dashboard into your localhost:8050. The information in this dashboard is update
 every 500ms.
 
@@ -108,9 +108,9 @@ Now, upload to the bucket the file `aws/analysis.py`.
 
 ### Create redshift database
 To create the redshift database, that is our datasource for ETL, run
-
+```
 python3 aws/create_redshift.py
-
+```
 
 ### Deploy docker container into ECS
 > TODO
@@ -136,17 +136,18 @@ At this moment, you have to guarantee that the inbound rule to connect to EMR by
   ![ssh-inbound-rule](docs/ssh-inbound-rule.png)
 
 Now, you can connect to the master node. Open a terminal on the same folder that you download your key-pair and run
-
+```
 ssh -i <file_of_key_pair> hadoop@<public_dns_of_emr>
-
+```
 
 On the EMR master node, you need to copy the `analysis.py` file to your cluster and run it. For this, run
-
+```
 aws s3 cp <s3-uri-for-analysis-file>
-
+```
 
 Finally, run
-
+```
    spark-submit \
       --packages org.mongodb:mongodb-driver:3.12.11,com.amazon.redshift:redshift-jdbc42:2.1.0.12,org.mongodb.spark:mongo-spark-connector_2.12:10.1.1 \
        analysisMongo.py 
+```
