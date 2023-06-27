@@ -42,17 +42,17 @@ try:
         dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
 
         # limit time to 1 minute before the last timestamp
-        LimitTime = LastTimeStamp - backInTime
-        print(f'LimitTime: {LimitTime}')
+        LastTimeStamp = LastTimeStamp - backInTime
+        print(f'LimitTime: {LastTimeStamp}')
 
         # Filter the records until 1 minute before the last timestamp
-        dfRecent = dfFull.filter(F.col("time") > LimitTime)
+        dfRecent = dfFull.filter(F.col("time") > LastTimeStamp)
 
         # get distinct plates
         plates = dfRecent.select("plate").distinct()
 
         # filter last 5 minutes of dfFull to get the last 3 records of each car
-        dfGet3Registers = dfFull.filter(F.col("time") > (LimitTime - 240))
+        dfGet3Registers = dfFull.filter(F.col("time") > (LastTimeStamp - 240))
 
         # get the last 3 records of each car in plates from dfFull
         dfNew = dfGet3Registers.join(plates, "plate", "inner")
@@ -418,12 +418,12 @@ try:
         LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
 
         # if the new timestamp is the same as the previous one, it means there is no new data
-        if LastTimeStamp_new == LastTimeStamp:
+        if LastTimeStamp_new != None and LastTimeStamp_new - 60 == LastTimeStamp:
             # sums 60 to avoid going backInTime = 60
             LastTimeStamp = LastTimeStamp_new + backInTime
             print("No new data.")
         elif LastTimeStamp_new == None:
-            LastTimeStamp += backInTime    
+            LastTimeStamp += backInTime
         else:
             LastTimeStamp = LastTimeStamp_new
             print(f"New data found. Last timestamp: {LastTimeStamp}")
