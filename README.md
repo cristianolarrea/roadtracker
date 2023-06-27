@@ -104,7 +104,7 @@ After that, you're effectively in the AWS menu. Now, search for "S3" in the sear
 After that, click on "Create bucket". On the creation page, give the name "*roadtracker*" for the bucket and then click 
 on "Create Bucket" at the end of the page.
 
-Now, upload to the bucket the file `aws/analysis.py`.
+Now, upload to the bucket the file `aws/etl/analysis.py`.
 
 ### Create redshift database
 To create the redshift database, that is our datasource for ETL, run

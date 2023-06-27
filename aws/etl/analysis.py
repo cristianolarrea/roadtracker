@@ -413,6 +413,15 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "times") \
             .save()
+
+        # saves last timestamp for experiments          
+        dfTimestamps = spark.createDataFrame([(LastTimeStamp,)], ['LastTimeStamp'])
+
+        cars_over_speed_limit.write.format("mongodb") \
+            .mode("overwrite") \
+            .option("database", "roadtracker") \
+            .option("collection", "lasttimestamp") \
+            .save()
         
         # gets the new timestamp
         LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
