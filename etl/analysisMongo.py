@@ -414,10 +414,20 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "times") \
             .save()
+        
+        # gets the new timestamp
+        LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
 
-        # Update timestamp
-        LastTimestamp = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
-        print(f'Last timestamp: {LastTimestamp}')
+        # if the new timestamp is the same as the previous one, it means there is no new data
+        if LastTimeStamp_new == LastTimeStamp:
+            # sums 60 to avoid going backInTime = 60
+            LastTimeStamp = LastTimeStamp_new + backInTime
+            print("No new data.")
+        # if the new timestamp is different, it means there is new data
+        else:
+            LastTimeStamp = LastTimeStamp_new
+            print(f"New data found. Last timestamp: {LastTimeStamp}")
+
 
 except KeyboardInterrupt:
     print('Interrupted')
