@@ -226,8 +226,7 @@ def main():
     # road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
     road_name = random.choice(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"])
     road_speed_limit = random.randint(120, 200)
-    #road_size = random.randint(50000, 100000)
-    road_size = 10000
+    road_size = random.randint(50000, 100000)
     road_lanes = random.randint(2, 4)
 
     # call the function to create the road

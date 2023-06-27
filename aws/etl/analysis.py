@@ -7,11 +7,9 @@ import sys
 import time
 
 def init_spark():
-    # use local
-    mongo_conn = "mongodb://127.0.0.1"
+    mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017" #SET THIS URL TO YOUR EC2 (MONGODB/DASH) INSTANCE
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.mongodb.write.connection.uri", mongo_conn)
-    conf.set("spark.mongodb.write.database", "roadtracker")
     
     sc = SparkContext.getOrCreate(conf=conf)
         
@@ -28,14 +26,20 @@ backInTime = 60
 try:
     while True:
 
-        # read from mongodb
-        dfFull = spark.read.format("mongodb") \
-            .option("database", "roadtracker") \
-            .option("collection", "sensor-data") \
+        dfFull = spark.read.format("jdbc") \
+            .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
+            .option("dbtable", "vasco") \
+            .option("tempdir", "s3n://path/for/temp/data") \
             .load() \
             .cache()
-            
-        print("Reading from Mongo:", dfFull.count(), "records")
+        
+        dfFull = dfFull.withColumnRenamed("road_id", "road")
+        dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
+        dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
+        dfFull = dfFull.withColumn("y", F.col("y").cast("smallint"))
+        dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
+        dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
+        dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
 
         # limit time to 1 minute before the last timestamp
         LastTimeStamp = LastTimeStamp - backInTime
@@ -43,8 +47,6 @@ try:
 
         # Filter the records until 1 minute before the last timestamp
         dfRecent = dfFull.filter(F.col("time") > LastTimeStamp)
-        
-        print("Filtering last minute:", dfRecent.count(), "records")
 
         # get distinct plates
         plates = dfRecent.select("plate").distinct()
@@ -411,10 +413,19 @@ try:
             .option("database", "roadtracker") \
             .option("collection", "times") \
             .save()
+
+        # saves last timestamp for experiments          
+        dfTimestamps = spark.createDataFrame([(LastTimeStamp,)], ['LastTimeStamp'])
+
+        cars_over_speed_limit.write.format("mongodb") \
+            .mode("overwrite") \
+            .option("database", "roadtracker") \
+            .option("collection", "lasttimestamp") \
+            .save()
         
         # gets the new timestamp
-        LastTimeStamp_new = dfRecent.select(col("time")).agg({"time": "max"}).collect()[0][0]
-        
+        LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
+
         # if the new timestamp is the same as the previous one, it means there is no new data
         if LastTimeStamp_new != None and LastTimeStamp_new - 60 == LastTimeStamp:
             # sums 60 to avoid going backInTime = 60
