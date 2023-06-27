@@ -2,15 +2,13 @@ import random
 import numpy as np
 import string
 import time
-import multiprocessing as mp
-import signal
 import sys
 import logging
-from kafka import KafkaProducer
+# from kafka import KafkaProducer
 
-KAFKA_TOPIC = 'sensor-data'
+# KAFKA_TOPIC = 'sensor-data'
 
-logger = logging.getLogger('kafka')
+# logger = logging.getLogger('kafka')
 
 class vehicle:
     def __init__(self, x, y, plate, speed):
@@ -54,36 +52,35 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
-    producer = KafkaProducer()
-    # with open("all_roads.csv", "a") as f:
-    #      if mode == "forward":
-    #          f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
-    #      else:
-    #          f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
+    # producer = KafkaProducer()
+    with open("all_roads.csv", "a") as f:
+        if mode == "forward":
+            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
+        else:
+            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
 
-    if mode == "forward":
-       message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
-    else:
-       message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
-    producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
-    producer.close()
+    # if mode == "forward":
+    #     message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
+    # else:
+    #     message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
+    # producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
+    # producer.close()
 
 def sub(road, mode):
+    global processes_cars
+    processes_cars = []
+
     # cria a matriz que representa a estrada
     matrix_cars = np.full((road.size,road.lanes), "XXXXXX")
 
     cars = road.vehicles
     cars.sort(key = calc_speed) # ordena os carros por velocidade
 
-    print("start", road.name, len(cars))
-
     for car in cars:
-        print(car.x)
         # atualiza o contador de ciclos para remover a colisão
         if car.collision:
             car.cicles_to_remove_collision += 1
             if car.cicles_to_remove_collision == road.cicles_to_remove_collision:
-                print("Removed", car.plate)
                 cars.remove(car)
                 continue
 
@@ -101,7 +98,7 @@ def sub(road, mode):
         # forçar colisão se a probabilidade de colisão for maior que o random
         if random.random() < road.collision_risk and trigger_collision:
             car.x = collision_pos
-            # enviar mensagem aqui???
+            # enviar mensagem aqui
             send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
             car.collision = True
@@ -109,14 +106,14 @@ def sub(road, mode):
             for car_2 in cars:
                 if car_2.plate == plate_colided:
                     car_2.collision = True
-                    # enviar mensagem aqui???
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
         # se nao houver, só atualiza a posicao do carro
         if not trigger_collision:
             matrix_cars[car.x + car.speed][car.y] = car.plate
             car.x += car.speed
-            # enviar mensagem aqui???
+            # enviar mensagem aqui
             send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
         # checa a possibilidade de o carro trocar de pista
@@ -124,41 +121,42 @@ def sub(road, mode):
         if trigger_collision and car.collision == False:
             # se conseguiu trocar de pista, nao ha mais risco de colisao
             if car.y != 0: # para a esquerda
-                if matrix_cars[collision_pos][car.y - 1] != "XXXXXX":
+                if matrix_cars[car.x + car.speed][car.y - 1] == "XXXXXX":
                     trigger_collision = False
-                    matrix_cars[collision_pos][car.y - 1] = car.plate
-                    # enviar mensagem aqui???
+                    matrix_cars[car.x + car.speed][car.y - 1] = car.plate
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
+
 
             if car.y != road.lanes-1: # para a direita
-                if matrix_cars[collision_pos][car.y + 1] != "XXXXXX": #and trigger_collision:
+                if matrix_cars[car.x + car.speed][car.y + 1] == "XXXXXX": #and trigger_collision:
                     trigger_collision = False
-                    matrix_cars[collision_pos][car.y + 1] = car.plate
-                    # enviar mensagem aqui???
+                    matrix_cars[car.x + car.speed][car.y + 1] = car.plate
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
+                
             # se nao conseguiu trocar de pista, diminui a velocidade
             if trigger_collision:
                 if car.speed - (achieved_speed+1) < road.max_decceleration:
                     car.speed -= (achieved_speed+1)
                     matrix_cars[car.x + car.speed][car.y] = car.plate
                     trigger_collision = False
-                    # enviar mensagem aqui???
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
                     
         # se nao conseguiu trocar de pista ou diminuir a velocidade, colidiu
         if trigger_collision:
             car.x = collision_pos
             car.collision = True
-            # enviar mensagem aqui???
+            # enviar mensagem aqui
             send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
-            print("Colided", car.plate)
 
             # define que o carro em que ele bateu também colidiu
             for car_2 in cars:
                 if car_2.plate == plate_colided:
                     car_2.collision = True
-                    # enviar mensagem aqui???
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
         if car.collision == True:
@@ -191,15 +189,20 @@ def sub(road, mode):
             if car.speed > 0:
                 if car.y != 0 and car.y != road.lanes -1:
                     car.y = random.choice([car.y+1,car.y-1])
+                    car.x += car.speed
                 elif car.y == 0:
                     car.y += 1
-                    # enviar mensagem aqui???
+                    car.x += car.speed
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
 
                 else:
                     car.y -= 1
-                    # enviar mensagem aqui???
+                    # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
+    
+    for p_car in processes_cars:
+        p_car.join()
 
     for i in range(road.lanes):
         if random.random() < road.prob_vehicle_surge:
@@ -209,35 +212,23 @@ def sub(road, mode):
             cars.append(car)
     road.vehicles = cars
 
-    print("end", road.name, len(cars))
-
-    #time.sleep(0.05)
-
-def signal_handler(signal, frame):
-    print("Keyboard interrupt received. Terminating all processes...")
-    sys.exit(0)
-
 def simulate_road(road_fwd, road_bwd):
-
-    print("================")
-    tempo = int(1000*time.time())
-    print(time.time())
-    tempo = str(tempo)
-    print(tempo)
-    print("==============")
-    sub(road_fwd, "forward")
-    sub(road_bwd, "backward")
+    while True:
+        sub(road_fwd, "forward")
+        sub(road_bwd, "backward")
 
 def main():
+    road_number = random.randint(1, 31)
+    # road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
+    road_name = random.choice(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"])
+    road_speed_limit = random.randint(120, 200)
+    road_size = random.randint(50000, 100000)
+    road_lanes = random.randint(2, 4)
 
-    with open("all_roads.csv", "w") as f:
-        f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
-    
-    # time.sleep(2)
-    road_fwd = road("road1", 5, 150000, 5, .5, .1, 120, 60, .2, 5, 2,200)
-    road_bwd = road("road2", 5, 150000, 5, .5, .1, 120, 60, .2, 5, 2,200)
+    # call the function to create the road
+    road_fwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+    road_bwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
     simulate_road(road_fwd, road_bwd)
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler)
     main()
