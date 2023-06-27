@@ -403,13 +403,21 @@ try:
             ("historical1", time_historical1),
             ("historical2", time_historical2),
             ("historical3", time_historical3),
-            ("alternative", time_alternative)
+            ("alternative", time_alternative),
         ], ["analysis", "time"])
 
         dfTimes.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "times") \
+            .save()
+        
+        dfTimestamps = spark.createDataFrame([(LastTimeStamp,)], ['LastTimeStamp'])
+
+        cars_over_speed_limit.write.format("mongodb") \
+            .mode("overwrite") \
+            .option("database", "roadtracker") \
+            .option("collection", "lasttimestamp") \
             .save()
         
         # gets the new timestamp
