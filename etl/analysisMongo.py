@@ -8,11 +8,9 @@ import time
 
 def init_spark():
     # use local
-    mongo_conn = "mongodb://127.0.0.1"
+    mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017"
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
-    conf.set("spark.write.connection.uri", mongo_conn)
-    conf.set("spark.mongodb.write.database", "roadtracker")
-    conf.set("spark.mongodb.write.collection", "collisionRisk")
+    conf.set("spark.mongodb.write.connection.uri", mongo_conn)
     
     sc = SparkContext.getOrCreate(conf=conf)
         
@@ -47,7 +45,7 @@ try:
         print(f'LimitTime: {LimitTime}')
 
         # Filter the records until 1 minute before the last timestamp
-        dfNew = dfFull.filter(F.col("time") > LimitTime)
+        dfNew = dfFull.filter(F.col("time") > LimitTime )
 
         # get distinct plates
         plates = dfNew.select("plate").distinct()
