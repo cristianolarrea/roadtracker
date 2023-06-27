@@ -213,8 +213,9 @@ def sub(road, mode):
     road.vehicles = cars
 
 def simulate_road(road_fwd, road_bwd):
-    sub(road_fwd, "forward")
-    sub(road_bwd, "backward")
+    while True:
+        sub(road_fwd, "forward")
+        sub(road_bwd, "backward")
 
 def main():
     road_number = random.randint(1, 31)
