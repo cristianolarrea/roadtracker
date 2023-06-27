@@ -8,10 +8,10 @@ import time
 
 def init_spark():
     # use local
-    #mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017"
-    mongo_conn = "mongodb://localhost:27017"
+    mongo_conn = "mongodb://127.0.0.1"
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.mongodb.write.connection.uri", mongo_conn)
+    conf.set("spark.mongodb.write.database", "roadtracker")
     
     sc = SparkContext.getOrCreate(conf=conf)
         
@@ -28,35 +28,29 @@ backInTime = 60
 try:
     while True:
 
-        # dfFull = spark.read.format("jdbc") \
-        #     .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
-        #     .option("dbtable", "vasco") \
-        #     .option("tempdir", "s3n://path/for/temp/data") \
-        #     .load() \
-        #     .cache()
-        
-        dfFull = spark.read.csv("../all_roads.csv")
-        
-        # dfFull = dfFull.withColumnRenamed("road_id", "road")
-        # dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
-        # dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
-        # dfFull = dfFull.withColumn("y", F.col("y").cast("smallint"))
-        # dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
-        # dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
-        # dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
+        # read from mongodb
+        dfFull = spark.read.format("mongodb") \
+            .option("database", "roadtracker") \
+            .option("collection", "sensor-data") \
+            .load() \
+            .cache()
+            
+        print("Reading from Mongo:", dfFull.count(), "records")
 
         # limit time to 1 minute before the last timestamp
-        LimitTime = LastTimeStamp - backInTime
-        print(f'LimitTime: {LimitTime}')
+        LastTimeStamp = LastTimeStamp - backInTime
+        print(f'LimitTime: {LastTimeStamp}')
 
         # Filter the records until 1 minute before the last timestamp
-        dfNew = dfFull.filter(F.col("time") > LimitTime)
+        dfRecent = dfFull.filter(F.col("time") > LastTimeStamp)
+        
+        print("Filtering last minute:", dfRecent.count(), "records")
 
         # get distinct plates
-        plates = dfNew.select("plate").distinct()
+        plates = dfRecent.select("plate").distinct()
 
         # filter last 5 minutes of dfFull to get the last 3 records of each car
-        dfGet3Registers = dfFull.filter(F.col("time") > (LimitTime - 240))
+        dfGet3Registers = dfFull.filter(F.col("time") > (LastTimeStamp - 240))
 
         # get the last 3 records of each car in plates from dfFull
         dfNew = dfGet3Registers.join(plates, "plate", "inner")
@@ -419,14 +413,15 @@ try:
             .save()
         
         # gets the new timestamp
-        LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
-
+        LastTimeStamp_new = dfRecent.select(col("time")).agg({"time": "max"}).collect()[0][0]
+        
         # if the new timestamp is the same as the previous one, it means there is no new data
-        if LastTimeStamp_new == LastTimeStamp:
+        if LastTimeStamp_new != None and LastTimeStamp_new - 60 == LastTimeStamp:
             # sums 60 to avoid going backInTime = 60
             LastTimeStamp = LastTimeStamp_new + backInTime
             print("No new data.")
-        # if the new timestamp is different, it means there is new data
+        elif LastTimeStamp_new == None:
+            LastTimeStamp += backInTime
         else:
             LastTimeStamp = LastTimeStamp_new
             print(f"New data found. Last timestamp: {LastTimeStamp}")

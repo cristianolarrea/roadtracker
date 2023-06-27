@@ -4,11 +4,11 @@ import string
 import time
 import sys
 import logging
-# from kafka import KafkaProducer
+from kafka import KafkaProducer
 
-# KAFKA_TOPIC = 'sensor-data'
+KAFKA_TOPIC = 'sensor-data'
 
-# logger = logging.getLogger('kafka')
+logger = logging.getLogger('kafka')
 
 class vehicle:
     def __init__(self, x, y, plate, speed):
@@ -52,19 +52,19 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
-    # producer = KafkaProducer()
-    with open("all_roads.csv", "a") as f:
-        if mode == "forward":
-            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
-        else:
-            f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
+    producer = KafkaProducer()
+    # with open("all_roads.csv", "a") as f:
+    #     if mode == "forward":
+    #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
+    #     else:
+    #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n")
 
-    # if mode == "forward":
-    #     message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
-    # else:
-    #     message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
-    # producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
-    # producer.close()
+    if mode == "forward":
+        message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n"
+    else:
+        message = str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(road_size - car.x) + "," + str(car.y + road_lanes) + "," + str(car.plate) + "," + str(time.time()) + "," + "-1" + "\n"
+    producer.send(KAFKA_TOPIC, bytes(message, 'utf-8'))
+    producer.close()
 
 def sub(road, mode):
     global processes_cars
