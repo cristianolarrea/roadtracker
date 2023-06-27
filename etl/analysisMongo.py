@@ -33,6 +33,7 @@ try:
             .option("tempdir", "s3n://path/for/temp/data") \
             .load() \
             .cache()
+        
         dfFull = dfFull.withColumnRenamed("road_id", "road")
         dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
         dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
@@ -40,23 +41,26 @@ try:
         dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
         dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
         dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
+
         # limit time to 1 minute before the last timestamp
         LimitTime = LastTimeStamp - backInTime
         print(f'LimitTime: {LimitTime}')
 
         # Filter the records until 1 minute before the last timestamp
-        dfNew = dfFull.filter(F.col("time") > LimitTime )
+        dfNew = dfFull.filter(F.col("time") > LimitTime)
 
         # get distinct plates
         plates = dfNew.select("plate").distinct()
 
+        # filter last 5 minutes of dfFull to get the last 3 records of each car
+        dfGet3Registers = dfFull.filter(F.col("time") > (LimitTime - 240))
+
         # get the last 3 records of each car in plates from dfFull
-        dfNewRoad = dfFull.join(plates, "plate", "inner")
+        dfNew = dfGet3Registers.join(plates, "plate", "inner")
 
         windowDept = Window.partitionBy("plate") \
             .orderBy(col("time").desc())
-
-        # get the last 3 records of each car
+        
         dfNew = dfNew.withColumn("row", row_number().over(windowDept)) \
             .filter(col("row") <= 3)
 
