@@ -49,6 +49,12 @@ try:
         # Filter the records until 1 minute before the last timestamp
         dfNew = dfFull.filter(F.col("time") > LimitTime)
 
+        # get distinct plates
+        plates = dfNew.select("plate").distinct()
+
+        # get the last 3 records of each car in plates from dfFull
+        dfNewRoad = dfFull.join(plates, "plate", "inner")
+
         windowDept = Window.partitionBy("plate") \
             .orderBy(col("time").desc())
 
