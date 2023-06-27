@@ -67,8 +67,6 @@ def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
     # producer.close()
 
 def sub(road, mode):
-    global processes_cars
-    processes_cars = []
 
     # cria a matriz que representa a estrada
     matrix_cars = np.full((road.size,road.lanes), "XXXXXX")
@@ -83,12 +81,18 @@ def sub(road, mode):
             if car.cicles_to_remove_collision == road.cicles_to_remove_collision:
                 cars.remove(car)
                 continue
+        
+        # tira o carro da pista caso sua posição seja maior que o tamanho da pista
+        if car.x + car.speed > road.size-1:
+            cars.remove(car)
+            continue
 
         trigger_collision = False
 
         for i in range(car.speed):
             # checa se há carros no meio do avanço do carro
             achieved_speed = i
+            #if car.x + i < road.size-1:
             if matrix_cars[car.x + i][car.y] != "XXXXXX":
                 trigger_collision = True
                 collision_pos = car.x + i
@@ -111,10 +115,13 @@ def sub(road, mode):
 
         # se nao houver, só atualiza a posicao do carro
         if not trigger_collision:
+            #if car.x + car.speed < road.size-1:
             matrix_cars[car.x + car.speed][car.y] = car.plate
             car.x += car.speed
             # enviar mensagem aqui
             send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
+            #else:
+                #pass
 
         # checa a possibilidade de o carro trocar de pista
         # adicionamos car.collision == False para evitar que o carro troque de pista se ja colidiu
@@ -129,6 +136,7 @@ def sub(road, mode):
 
 
             if car.y != road.lanes-1: # para a direita
+                #if car.x + car.speed < road.size-1:
                 if matrix_cars[car.x + car.speed][car.y + 1] == "XXXXXX": #and trigger_collision:
                     trigger_collision = False
                     matrix_cars[car.x + car.speed][car.y + 1] = car.plate
@@ -180,10 +188,6 @@ def sub(road, mode):
             else:
                 car.acceleration = accel_new
 
-            # tira o carro da pista caso sua posição seja maior que o tamanho da pista
-            if car.x + car.speed > road.size-1:
-                cars.remove(car)
-
         # checa se o carro vai trocar de pista
         if road.prob_lane_change > random.random():
             if car.speed > 0:
@@ -200,15 +204,12 @@ def sub(road, mode):
                     car.y -= 1
                     # enviar mensagem aqui
                     send_message(road.name, road.size, road.lanes, road.max_speed, car, mode)
-    
-    for p_car in processes_cars:
-        p_car.join()
 
     for i in range(road.lanes):
         if random.random() < road.prob_vehicle_surge:
             plate = car_plate()
             # carros entram com uma velocidade entre o mínimo e o máximo da pista
-            car = vehicle(0, i, plate, random.randint(road.min_speed, road.max_speed))
+            car = vehicle(1, i, plate, random.randint(road.min_speed, road.max_speed))
             cars.append(car)
     road.vehicles = cars
 
@@ -218,11 +219,15 @@ def simulate_road(road_fwd, road_bwd):
         sub(road_bwd, "backward")
 
 def main():
+    with open("all_roads.csv", "w") as f:
+        f.write("road,road_speed,road_size,x,y,plate,time,direction\n")
+    
     road_number = random.randint(1, 31)
     # road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
     road_name = random.choice(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"])
     road_speed_limit = random.randint(120, 200)
-    road_size = random.randint(50000, 100000)
+    #road_size = random.randint(50000, 100000)
+    road_size = 10000
     road_lanes = random.randint(2, 4)
 
     # call the function to create the road
