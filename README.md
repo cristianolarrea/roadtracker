@@ -116,7 +116,7 @@ python3 aws/create_redshift.py
 > TODO
 
 ### Deploy mongodb database and dashboard into AWS EC2
-
+> TODO
 
 ### Deploy pyspark script into EMR
 Search for "EMR" in the search bar and click on the service. Click on "Create cluster". Set the cluster with this caracteristicals:
@@ -142,7 +142,7 @@ ssh -i <file_of_key_pair> hadoop@<public_dns_of_emr>
 
 On the EMR master node, you need to copy the `analysis.py` file to your cluster and run it. For this, run
 ```
-aws s3 cp <s3-uri-for-analysis-file>
+aws s3 cp <s3-uri-for-analysis-file> .
 ```
 
 Finally, run
