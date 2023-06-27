@@ -216,7 +216,7 @@ def simulate_road(road_fwd, road_bwd):
     sub(road_fwd, "forward")
     sub(road_bwd, "backward")
 
-def main(num_instances):
+def main():
     road_number = random.randint(1, 31)
     road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
     road_speed_limit = random.randint(120, 200)
@@ -229,5 +229,4 @@ def main(num_instances):
     simulate_road(road_fwd, road_bwd)
 
 if __name__ == '__main__':
-    num_instances = int(input("Enter the number of instances: "))
-    main(num_instances)
+    main()
