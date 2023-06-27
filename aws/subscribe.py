@@ -40,6 +40,8 @@ try:
             return val
 
         messages = consumer.consume(THRESHOLD, timeout=TIMEOUT)
+        if len(messages) == 0:
+            continue
         messages = list(map(partMessages, messages))
 
         query = f'INSERT INTO vasco VALUES {"".join(messages[:-1])}' + messages[-1][:-1]
