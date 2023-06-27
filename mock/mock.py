@@ -251,8 +251,8 @@ def main(num_instances):
     road_speed_limit = random.randint(120, 200)
     road_size = random.randint(50000, 100000)
     road_lanes = random.randint(2, 4)
-    road_fwd = road(str(road_number) + road_name, road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
-    road_bwd = road(str(road_number) + road_name, road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+    road_fwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+    road_bwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)

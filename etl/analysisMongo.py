@@ -325,9 +325,9 @@ try:
         dfSpeeds = dfSpeeds.withColumn("diff_time", F.col("past_time") - F.col("time"))
         dfSpeeds = dfSpeeds.filter(F.col("diff_time") < t)
 
-        #  check which cars have more than 1 infractions (change to desired number)
+        #  check which cars have more than 1 infractions (change to desired number (10))
         dfInfractions = dfSpeeds.groupBy("plate").sum("change_in_speed") \
-            .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
+            .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1) #10
 
         dfInfractions.write.format("mongodb") \
             .mode("overwrite") \
