@@ -108,7 +108,7 @@ app.layout = html.Div([
                         )
                     ])
                 ]),
-            ], md=5, sm=6),
+            ], md=4, sm=6),
 
             dbc.Col([
                 dbc.Row([
@@ -137,7 +137,7 @@ app.layout = html.Div([
                         )
                     ])
                 ])
-            ], md=3, sm=6),
+            ], md=4, sm=6),
 
             dbc.Col([
                 dbc.Row([
@@ -156,10 +156,10 @@ app.layout = html.Div([
                 dbc.Row([
                     dbc.Col([
                         dbc.Card(
-                            [html.H1("Tempos das Análises"),
-                             html.Div(id='list_times'),
+                            [html.H1("Carros com Direção Perigosa"),
+                             html.Div(id='list_dangerous_driving'),
                              dcc.Interval(
-                                 id='list_times_interval',
+                                 id='list_dangerous_driving_interval',
                                  interval = 500,
                                  n_intervals=0)],
                             style={"height": "38vh"}
@@ -167,6 +167,19 @@ app.layout = html.Div([
                     ])
                 ])
             ], md=4, sm=6)
+        ]),
+        dbc.Row([
+            dbc.Col([
+                dbc.Card(
+                        [html.H1("Tempos das Análises"),
+                         html.Div(id='list_times'),
+                         dcc.Interval(
+                             id='list_times_interval',
+                             interval = 500,
+                             n_intervals=0)],
+                        style={"height": "48vh"}
+                    )
+            ])
         ]),
     ], fluid=True)
 ])
@@ -227,17 +240,8 @@ def display_data_table(df,height,cellWidth):
              'whiteSpace': 'normal',
              'height': 'auto',
              'minWidth': cellWidth, 'width': cellWidth, 'maxWidth': cellWidth,
-         },
-         style_cell_conditional=[
-            {'if': {'column_id': 'road'},
-             'width': '15%'},
-            {'if': {'column_id': 'avg_speed'},
-             'width': '20%'},
-            {'if': {'column_id': 'avg_time_to_cross'},
-             'width': '30%'},
-            {'if': {'column_id': 'avg_time_to_cross'},
-             'width': '35%'}
-         ])
+         }
+    )
     return table
 
 ######### ANALISE 5 #########
@@ -308,6 +312,13 @@ def update_times(n):
     return display_data_table(df, "32vh", "50%")
 
 ######### ANALISE ALTERNATIVA #########
+@callback(Output('list_dangerous_driving', 'children'),
+          Input('list_dangerous_driving_interval', 'n_intervals'))
+def update_dangerous_driving(n):
+    coll = db["analysis7"] # collection name here
+    df = pd.DataFrame(list(coll.find()))
+    df = df.drop('_id', axis=1)
+    return display_data_table(df, "40vh", "50%")
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
