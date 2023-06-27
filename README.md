@@ -66,7 +66,7 @@ python3 local/etl/analysis.py
 ## Visualizing data
 To visualize data, run
 ```
-python3 local/dash/dash.py
+python3 local/dash/app.py
 ```
 This will create a server and show a dashboard into your localhost:8050. The information in this dashboard is update
 every 500ms.
