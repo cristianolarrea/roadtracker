@@ -116,7 +116,39 @@ python3 aws/create_redshift.py
 > TODO
 
 ### Deploy mongodb database and dashboard into AWS EC2
-> TODO
+Search for "EC2" in the search bar and click on the service. Click on "Execute instances". Give a name for instance and set this caracteristics:
+- AMI: Ubuntu Server 22.04 LTS
+- Instance type: t2.large
+- key-pair: vockey
+- Allow traffic from SSH, HTTP, HTTPS for any IP's (0.0.0.0/0)
+Others configurations could be maintaned default.
+Then, click in "Execute instance".
+
+Then, you need to setup the ports to access the EC2 via browser and via ETL to send data for Mongodb. For this, go to the secutiry group
+and verify the inbound rules. If the rules below don't exists, create them.
+![ec2-inbound-rule](docs/ec2-inbound-rule.png)
+
+Now, you can access the EC2. To do this, open a terminal where you download your key-pair file and run
+```
+chmod 400 <key-pair-file>
+ssh -i <key_pair_file> ubuntu@<public-ip-of-ec2>
+```
+
+The next step is to install mongodb on AWS EC2. For this, you can follow [this tutorial](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/).
+After installation, you need to set the mongodb *bindIp* to get external connections. For this, go to the root folder of your EC2 machine and access
+the `mongod.conf` file. Edit the document replacing the `bindIp=127.0.0.1` to `bindIp=0.0.0.0`.
+
+The final step is to setup the enviroment to run dash. Create a "dash" folder into your EC2 and then you need to copy your local file of dash to your EC2 machine. For this, run, on your machine
+```
+scp -r -i <key_pair_file> <path_to_aws_dash_directory> ec2-user@<public-ip-of-ec2>:dash
+```
+
+Finally, you can run dash by
+```
+apt-get install python3-pip
+pip install -r dash/requirements.txt
+python3 dash/app.py
+```
 
 ### Deploy pyspark script into EMR
 Search for "EMR" in the search bar and click on the service. Click on "Create cluster". Set the cluster with this caracteristicals:
