@@ -237,37 +237,22 @@ def sub(road, mode):
 
 def signal_handler(signal, frame):
     print("Keyboard interrupt received. Terminating all processes...")
-    for p in processes:
-        p.terminate()
     sys.exit(0)
 
 def simulate_road(road_fwd, road_bwd):
-
-    while True:
-        tempo = int(1000*time.time())
-        tempo = str(tempo)
-        sub(road_fwd, "forward")
-        sub(road_bwd, "backward")
+    sub(road_fwd, "forward")
+    sub(road_bwd, "backward")
 
 def main(num_instances):
-    global processes
-    processes = []
-    i = 0
-    
-    while i < num_instances:
-        # time.sleep(2)
-        road_speed_limit = random.randint(120, 200)
-        road_size = random.randint(50000, 100000)
-        road_lanes = random.randint(2, 4)
-        road_fwd = road("road" + str(i), road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
-        road_bwd = road("road" + str(i), road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
-        p = mp.Process(target=simulate_road, args=(road_fwd, road_bwd))
-        p.start()
-        processes.append(p)
-        i += 1
-        
-    for p in processes:
-        p.join()
+    # random choice of int between 1 and 31
+    road_number = random.randint(1, 31)
+    # random choice between strings
+    road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
+    road_speed_limit = random.randint(120, 200)
+    road_size = random.randint(50000, 100000)
+    road_lanes = random.randint(2, 4)
+    road_fwd = road(str(road_number) + road_name, road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+    road_bwd = road(str(road_number) + road_name, road_lanes, road_size, 5, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
