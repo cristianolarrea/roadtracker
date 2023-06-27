@@ -416,7 +416,7 @@ try:
             .save()
 
         # Update timestamp
-        LastTimestamp = dfFull.select(col("time")).agg({"time": "max"}).collect()[0][0]
+        LastTimestamp = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
         print(f'Last timestamp: {LastTimestamp}')
 
 except KeyboardInterrupt:
