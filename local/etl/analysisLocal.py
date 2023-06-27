@@ -8,10 +8,10 @@ import time
 
 def init_spark():
     # use local
-    #mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017"
-    mongo_conn = "mongodb://localhost:27017"
+    mongo_conn = "mongodb://127.0.0.1"
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.mongodb.write.connection.uri", mongo_conn)
+    conf.set("spark.mongodb.write.database", "roadtracker")
     
     sc = SparkContext.getOrCreate(conf=conf)
         
@@ -28,22 +28,12 @@ backInTime = 60
 try:
     while True:
 
-        # dfFull = spark.read.format("jdbc") \
-        #     .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
-        #     .option("dbtable", "vasco") \
-        #     .option("tempdir", "s3n://path/for/temp/data") \
-        #     .load() \
-        #     .cache()
-        
-        dfFull = spark.read.csv("../mock/all_roads.csv", header=True, inferSchema=True)
-        
-        # dfFull = dfFull.withColumnRenamed("road_id", "road")
-        # dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
-        # dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
-        # dfFull = dfFull.withColumn("y", F.col("y").cast("smallint"))
-        # dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
-        # dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
-        # dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
+        # read from mongodb
+        dfFull = spark.read.format("mongodb") \
+            .option("database", "roadtracker") \
+            .option("collection", "sensor-data") \
+            .load() \
+            .cache()
 
         # limit time to 1 minute before the last timestamp
         LimitTime = LastTimeStamp - backInTime
