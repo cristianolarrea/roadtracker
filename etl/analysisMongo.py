@@ -49,6 +49,12 @@ try:
         # Filter the records until 1 minute before the last timestamp
         dfNew = dfFull.filter(F.col("time") > LimitTime)
 
+        # get distinct plates
+        plates = dfNew.select("plate").distinct()
+
+        # get the last 3 records of each car in plates from dfFull
+        dfNewRoad = dfFull.join(plates, "plate", "inner")
+
         windowDept = Window.partitionBy("plate") \
             .orderBy(col("time").desc())
 
@@ -290,7 +296,7 @@ try:
 
 
         # --------------------
-        # ANALISE HISTORICA 3: CARROS PROIBIDOS DE CIRCULAR POR DIREÇÃO PERIGOSA
+        # ANALISE HISTORICA 3: CARROS PROIBIDOS DE CIRCULAR
         # partition by plate and order by time (twice to have ascending and descending row numbers)
 
         start_time = time.time()
@@ -311,7 +317,7 @@ try:
                                        F.when(((F.col("speed") > F.col("road_speed")) & (F.col("row") ==1)), 1) \
                                        .otherwise(F.col("change_in_speed")))
 
-        # chosen T (change it after testing)
+        # chosen T (change it to desired T)
         t = 2500000000
 
         # get all rows where now() - time < t
@@ -319,7 +325,7 @@ try:
         dfSpeeds = dfSpeeds.withColumn("diff_time", F.col("past_time") - F.col("time"))
         dfSpeeds = dfSpeeds.filter(F.col("diff_time") < t)
 
-        #  check which cars have more than 10 infractions
+        #  check which cars have more than 1 infractions (change to desired number)
         dfInfractions = dfSpeeds.groupBy("plate").sum("change_in_speed") \
             .withColumnRenamed("sum(change_in_speed)", "total_infractions").filter(F.col("total_infractions") >= 1)
 
@@ -331,6 +337,55 @@ try:
 
         time_historical3 = time.time() - start_time
         print(f'Time to historical 3: {time_historical3}')
+        # --------------------
+
+
+        # --------------------
+        # ANALISE ALTERNATIVA: CARROS COM DIREÇÃO PERIGOSA
+
+        start_time = time.time()
+
+        windowDept = Window.partitionBy("plate").orderBy(col("time").desc())
+
+        # filter rows with between t1 and t2, setting time t (UPDATE T1 AND T2)
+        t1 = 1680000000
+        t2 = 1690000000
+        dfCalcs = dfCalcs.filter((F.col("time") > t1) & (F.col("time") < t2))
+
+        # create column "changed_y" that is 1 if the car changed y and 0 otherwise
+        dfCalcs = dfCalcs.withColumn("changed_lane",
+                            F.when(((F.col("y") != F.lag("y", -1).over(windowDept))), 1) \
+                                .otherwise(0))
+
+        # create column "over_road_speed" that is 1 if the car is over the road speed and 0 otherwise
+        dfCalcs = dfCalcs.withColumn("over_road_speed",
+                                F.when(((F.col("speed") > F.col("road_speed"))), 3) \
+                                .otherwise(0))
+
+        # create column "over_acc" that is 1 if (acc>40 or acc<-40) and 0 otherwise
+        dfCalcs = dfCalcs.withColumn("over_acc",
+                                F.when(((F.col("acc") > 40) | (F.col("acc") < -40)), 3) \
+                                .otherwise(0))
+
+        # create a column "total" that is the sum of the previous columns for each car, and filter out no infraction cars
+        dfCalcs = dfCalcs.withColumn("total", F.col("changed_lane") + F.col("over_road_speed") + F.col("over_acc")).filter(F.col("total") > 0)
+
+        # do sliding window of I seconds 
+        # replace 60 with desired I (interval)
+        slidingWindow = Window.partitionBy("plate").orderBy(F.col("time").asc()).rangeBetween(Window.currentRow, 60)
+
+        # check if several infractions happened in the interval (7 or more)
+        dfCalcs = dfCalcs.withColumn("several_infractions", F.sum("total").over(slidingWindow) >=7).filter(F.col("several_infractions") == True)
+        dfSeveralInfractions = dfCalcs.select("plate")
+
+        dfSeveralInfractions.write.format("mongodb") \
+            .mode("overwrite") \
+            .option("database", "roadtracker") \
+            .option("collection", "alternative") \
+            .save()
+        
+        time_alternative = time.time() - start_time
+        print(f'Time to alternative: {time_alternative}')
         # --------------------
 
 
@@ -348,7 +403,8 @@ try:
             ("analysis6", time_analysis6),
             ("historical1", time_historical1),
             ("historical2", time_historical2),
-            ("historical3", time_historical3)
+            ("historical3", time_historical3),
+            ("alternative", time_alternative)
         ], ["analysis", "time"])
 
         dfTimes.write.format("mongodb") \
