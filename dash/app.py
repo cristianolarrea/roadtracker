@@ -104,7 +104,7 @@ app.layout = html.Div([
                                     id='list_collision_risk_interval',
                                     interval = 500,
                                     n_intervals=0)],
-                            style={"height": "38vh"}
+                            style={"height": "36vh"}
                         )
                     ])
                 ]),
@@ -120,7 +120,7 @@ app.layout = html.Div([
                                     id='list_top100_interval',
                                     interval = 500,
                                     n_intervals=0)],
-                            style={"height": "48vh"}
+                            style={"height": "46vh"}
                         )
                     ])
                 ]),
@@ -149,7 +149,7 @@ app.layout = html.Div([
                                             id='list_road_stats_interval',
                                             interval = 500,
                                             n_intervals=0)],
-                            style={"height": "48vh"}
+                            style={"height": "46vh"}
                         )
                     ])
                 ]),
@@ -177,7 +177,7 @@ app.layout = html.Div([
                              id='list_times_interval',
                              interval = 500,
                              n_intervals=0)],
-                        style={"height": "48vh"}
+                        style={"height": "40vh"}
                     )
             ])
         ]),
@@ -267,7 +267,7 @@ def update_risk_collision(n):
         coll = db["analysis6"]
         df = pd.DataFrame(list(coll.find()))
         df = df.drop('_id', axis=1)
-        result = display_data_table(df, "32vh", "50%")
+        result = display_data_table(df, "30vh", "50%")
     except:
         result = None
     return result
@@ -279,7 +279,7 @@ def update_top_100(n):
     coll = db["historical1"]
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "38vh", "50%")
+    return display_data_table(df, "36vh", "50%")
 
 ######### HISTORICA 2 #########
 @callback(Output('list_road_stats', 'children'),
@@ -290,7 +290,7 @@ def update_roads_stats(n):
     df = df.drop('_id', axis=1)
     df['avg_speed'] = df['avg_speed'].round(2)
     df['avg_time_to_cross'] = df['avg_time_to_cross'].round(2)
-    return display_data_table(df, "40vh", "25%")
+    return display_data_table(df, "36vh", "25%")
 
 ######### HISTORICA 3 #########
 @callback(Output('list_prohibited', 'children'),
@@ -309,7 +309,7 @@ def update_times(n):
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
     df['time'] = df['time'].round(2)
-    return display_data_table(df, "32vh", "50%")
+    return display_data_table(df, "34vh", "50%")
 
 ######### ANALISE ALTERNATIVA #########
 @callback(Output('list_dangerous_driving', 'children'),
@@ -318,7 +318,7 @@ def update_dangerous_driving(n):
     coll = db["analysis7"] # collection name here
     df = pd.DataFrame(list(coll.find()))
     df = df.drop('_id', axis=1)
-    return display_data_table(df, "40vh", "50%")
+    return display_data_table(df, "32vh", "50%")
 
 # ========  Run server  ======== #
 if __name__ == '__main__':
