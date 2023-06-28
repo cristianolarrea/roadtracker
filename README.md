@@ -118,7 +118,7 @@ To complete the redshift deployment we run the python script ```create_redshift.
 > 
 from the roadtracker folder:
 ```
-cd docker
+cd app
 ```
 
 ```
