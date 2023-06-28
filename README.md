@@ -107,11 +107,12 @@ on "Create Bucket" at the end of the page.
 Now, upload to the bucket the file `aws/etl/analysis.py`.
 
 ### Create redshift database
-To create the redshift database, that is our datasource for ETL, run
+To create the redshift cluster in AWS we run the following command in AWS CLI
 ```
-python3 aws/create_redshift.py
+redshift create-cluster --node-type dc2.large --number-of-nodes 2 --master-username admin --master-user-password roadTracker1 --cluster-identifier roadTracker --publicly-accessible --db-name road-tracker
 ```
-
+With the cluster created we open the VPC to our IP and connect in python with the endpoint.
+To complete the redshift deployment we run the python script ```create_redshift.py```
 ### Deploy docker container
 > TODO
 > 
