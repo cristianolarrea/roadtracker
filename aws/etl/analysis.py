@@ -7,7 +7,7 @@ import sys
 import time
 
 def init_spark():
-    mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017"
+    mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017" #SET THIS URL TO YOUR EC2 (MONGODB/DASH) INSTANCE
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.mongodb.write.connection.uri", mongo_conn)
     
