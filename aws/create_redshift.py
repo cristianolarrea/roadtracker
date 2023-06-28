@@ -17,7 +17,7 @@ conn = redshift_connector.connect(
 # Placa > String  > Not Null | X > Integer > Not Null | Y > Integer > Not Null
 
 cursor = conn.cursor()
-cursor.execute('CREATE TABLE IF NOT EXISTS sensor_data (placa CHAR(7) NOT NULL, x INT NOT NULL, y INT NOT NULL, data_hora TIMESTAMP NOT NULL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS sensor_data (road CHAR(255) NOT NULL, road_speed INT NOT NULL, road_size INT NOT NULL, x INT NOT NULL, y INT NOT NULL, plate CHAR(5) NOT NULL, time CHAR(255) NOT NULL, direction CHAR(2) NOT NULL)')
 
 conn.commit()
 conn.close()
