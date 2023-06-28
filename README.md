@@ -120,13 +120,25 @@ from the roadtracker folder:
 cd docker
 ```
 
-```docker build -f subscribe.Dockerfile -p subscribe .```
-```docker build -f mock.Dockerfile -p mock .```
-```docker build -f topic.Dockerfile -p topic .```
+```
+docker build -f subscribe.Dockerfile -p subscribe .
+```
 
-Then the user have to manually set the number of instances in the docker-compose.yaml file updating the NUM_ROADS
 
-```docker compose up```
+```
+docker build -f mock.Dockerfile -p mock .
+```
+
+
+```
+docker build -f topic.Dockerfile -p topic .
+```
+
+Then the user have to manually set the number of instances in the docker-compose.yaml file updating the ```NUM_ROADS```
+
+```
+docker compose up
+```
 
 
 ### Deploy mongodb database and dashboard into AWS EC2
