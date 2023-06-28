@@ -12,6 +12,7 @@ services:
     image: confluentinc/cp-kafka:latest
     depends_on:
       - zookeeper
+
     ports:
       - 29092:29092
     environment:
@@ -21,9 +22,24 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    expose:
-      - 9092
+      KAFKA_BOOSTRAP_SERVER: kafka:9092
   topic:
     image: topic
     depends_on:
       - kafka
+    environment:
+      WAIT_HOSTS: kafka:9092
+  producer:
+    image: mock
+    depends_on:
+      - kafka
+    environment:
+      WAIT_HOSTS: kafka:9092
+      NUM_ROADS: 5
+  consumer:
+    image: subscribe
+    depends_on:
+      - kafka
+    environment:
+      WAIT_HOSTS: kafka:9092
+

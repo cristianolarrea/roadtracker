@@ -3,12 +3,14 @@ import numpy as np
 import string
 import time
 import sys
-import logging
 from confluent_kafka import Producer
+import multiprocessing as mp
+import signal
 
+import os
+NUM_ROADS = int(os.environ.get('NUM_ROADS', 1))
 KAFKA_TOPIC = 'sensor-data'
 
-logger = logging.getLogger('kafka')
 
 class vehicle:
     def __init__(self, x, y, plate, speed):
@@ -36,7 +38,7 @@ class road:
         self.cicles_to_remove_collision = cicles_to_remove_collision
         self.collision_risk = collision_risk
         self.max_acceleration = max_acceleration
-        self.max_decceleration = max_decceleration # positivo 
+        self.max_decceleration = max_decceleration # positivo
 
         self.vehicles = []
         self.vehicles_to_remove = False
@@ -52,7 +54,7 @@ def car_plate():
     return plate
 
 def send_message(road_name, road_size, road_lanes, road_speed, car, mode):
-    producer = Producer({'bootstrap.servers': 'localhost:29092'})
+    producer = Producer({'bootstrap.servers': 'kafka:9092'})
     # with open("all_roads.csv", "a") as f:
     #     if mode == "forward":
     #         f.write(str(road_name) + "," + str(road_speed) + "," + str(road_size) + "," + str(car.x) + "," + str(car.y) + "," + str(car.plate) + "," + str(time.time()) + "," + "1" + "\n")
@@ -212,23 +214,43 @@ def sub(road, mode):
             cars.append(car)
     road.vehicles = cars
 
+def signal_handler(signal, frame):
+    print("Keyboard interrupt received. Terminating all processes...")
+    for p in processes:
+        p.terminate()
+    sys.exit(0)
+
 def simulate_road(road_fwd, road_bwd):
     while True:
         sub(road_fwd, "forward")
         sub(road_bwd, "backward")
 
-def main():
-    road_number = random.randint(1, 31)
-    # road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
-    road_name = random.choice(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"])
-    road_speed_limit = random.randint(120, 200)
-    road_size = random.randint(50000, 100000)
-    road_lanes = random.randint(2, 4)
+def main(num_instances):
+    global processes
+    processes = []
+    i = 0
 
-    # call the function to create the road
-    road_fwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
-    road_bwd = road(str(road_number) + road_name, road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
-    simulate_road(road_fwd, road_bwd)
+    while i < num_instances:
+        #road_number = random.randint(1, 31)
+        # road_name = random.choice(["de janeiro", "de fevereiro", "de março", "de abril", "de maio", "de junho", "de julho", "de agosto", "de setembro", "de outubro", "de novembro", "de dezembro"])
+        #road_name = random.choice(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sept", "oct", "nov", "dec"])
+        road_speed_limit = random.randint(120, 200)
+        road_size = random.randint(50000, 100000)
+        road_lanes = random.randint(2, 4)
+
+        # call the function to create the road
+        road_fwd = road("road" + str(i), road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+        road_bwd = road("road" + str(i), road_lanes, road_size, 3, .5, .1, road_speed_limit, 60, .2, 5, 2, 200)
+
+        p = mp.Process(target=simulate_road, args=(road_fwd, road_bwd))
+        p.start()
+        processes.append(p)
+        i += 1
+        
+    for p in processes:
+        p.join()
 
 if __name__ == '__main__':
-    main()
+    signal.signal(signal.SIGINT, signal_handler)
+    num_instances = NUM_ROADS
+    main(num_instances)

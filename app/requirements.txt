@@ -1,3 +1,6 @@
 numpy
 kafka-python
 confluent-kafka
+redshift_connector
+pandas
+multiprocess
