@@ -107,13 +107,40 @@ on "Create Bucket" at the end of the page.
 Now, upload to the bucket the file `aws/etl/analysis.py`.
 
 ### Create redshift database
-To create the redshift database, that is our datasource for ETL, run
+To create the redshift cluster in AWS we run the following command in AWS CLI
 ```
-python3 aws/create_redshift.py
+redshift create-cluster --node-type dc2.large --number-of-nodes 2 --master-username admin --master-user-password roadTracker1 --cluster-identifier roadTracker --publicly-accessible --db-name road-tracker
+```
+With the cluster created we open the VPC to our IP and connect in python with the endpoint.
+To complete the redshift deployment we run the python script ```create_redshift.py```
+### Deploy docker container
+> TODO
+> 
+from the roadtracker folder:
+```
+cd docker
 ```
 
-### Deploy docker container into ECS
-> TODO
+```
+docker build -f subscribe.Dockerfile -p subscribe .
+```
+
+
+```
+docker build -f mock.Dockerfile -p mock .
+```
+
+
+```
+docker build -f topic.Dockerfile -p topic .
+```
+
+Then the user have to manually set the number of instances in the docker-compose.yaml file updating the ```NUM_ROADS```
+
+```
+docker compose up
+```
+
 
 ### Deploy mongodb database and dashboard into AWS EC2
 Search for "EC2" in the search bar and click on the service. Click on "Execute instances". Give a name for instance and set this caracteristics:

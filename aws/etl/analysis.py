@@ -7,7 +7,7 @@ import sys
 import time
 
 def init_spark():
-    mongo_conn = "mongodb://ec2-54-226-151-135.compute-1.amazonaws.com:27017" #SET THIS URL TO YOUR EC2 (MONGODB/DASH) INSTANCE
+    mongo_conn = "mongodb://ec2-44-204-230-18.compute-1.amazonaws.com:27017" #SET THIS URL TO YOUR EC2 (MONGODB/DASH) INSTANCE
     conf = SparkConf().set("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1")
     conf.set("spark.mongodb.write.connection.uri", mongo_conn)
     
@@ -28,7 +28,7 @@ try:
 
         dfFull = spark.read.format("jdbc") \
             .option("url", "jdbc:redshift://roadtracker.cqgyzrqagvgs.us-east-1.redshift.amazonaws.com:5439/road-tracker?user=admin&password=roadTracker1") \
-            .option("dbtable", "vasco") \
+            .option("dbtable", "sensor_data") \
             .option("tempdir", "s3n://path/for/temp/data") \
             .load() \
             .cache()
@@ -418,14 +418,14 @@ try:
         # saves last timestamp for experiments          
         dfTimestamps = spark.createDataFrame([(LastTimeStamp,)], ['LastTimeStamp'])
 
-        cars_over_speed_limit.write.format("mongodb") \
+        dfTimestamps.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "lasttimestamp") \
             .save()
         
         # gets the new timestamp
-        LastTimeStamp_new = dfNew.select(col("time")).agg({"time": "max"}).collect()[0][0]
+        LastTimeStamp_new = dfRecent.select(col("time")).agg({"time": "max"}).collect()[0][0]
 
         # if the new timestamp is the same as the previous one, it means there is no new data
         if LastTimeStamp_new != None and LastTimeStamp_new - 60 == LastTimeStamp:
