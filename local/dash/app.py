@@ -9,9 +9,6 @@ database = 'roadtracker'
 client = MongoClient(MONGO_URL)
 db = client[database]
 
-with open("times_to_compute.csv", "w") as f:
-    f.write("times\n")
-
 # =====  Inicialização do Dash  ===== #
 app = Dash(__name__, 
     external_stylesheets=[dbc.themes.CYBORG, "assets/style.css", dbc.icons.FONT_AWESOME], 
@@ -272,11 +269,6 @@ def update_risk_collision(n):
         df = pd.DataFrame(list(coll.find()))
         df = df.drop('_id', axis=1)
         result = display_data_table(df, "30vh", "50%")
-        coll2 = db["lasttimestamp"]
-        df2 = pd.DataFrame(list(coll2.find()))
-        df2 = df2.drop('_id', axis=1)
-        with open("all_roads.csv", "a") as f:
-            f.write(str(time.time()-df2['timestamp'].iloc[-1]) + "\n")
     except:
         result = None
     return result

@@ -41,6 +41,8 @@ try:
         dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
         dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
 
+        print(f'Size of full: {dfFull.count()}')
+        
         # limit time to 1 minute before the last timestamp
         LastTimeStamp = LastTimeStamp - backInTime
         print(f'LimitTime: {LastTimeStamp}')
