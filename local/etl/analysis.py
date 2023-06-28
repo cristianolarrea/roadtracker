@@ -414,7 +414,7 @@ try:
         
         dfTimestamps = spark.createDataFrame([(LastTimeStamp,)], ['LastTimeStamp'])
 
-        cars_over_speed_limit.write.format("mongodb") \
+        dfTimestamps.write.format("mongodb") \
             .mode("overwrite") \
             .option("database", "roadtracker") \
             .option("collection", "lasttimestamp") \

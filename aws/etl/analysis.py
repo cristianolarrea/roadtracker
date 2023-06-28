@@ -33,14 +33,15 @@ try:
             .load() \
             .cache()
         
-        dfFull = dfFull.withColumnRenamed("road_id", "road")
-        dfFull = dfFull.withColumn("time", F.col("timestamp").cast("float"))
+        dfFull = dfFull.withColumn("time", F.col("time").cast("float"))
         dfFull = dfFull.withColumn("x", F.col("x").cast("int"))
         dfFull = dfFull.withColumn("y", F.col("y").cast("smallint"))
-        dfFull = dfFull.withColumn("road_speed", F.col("speed_limit").cast("int"))
+        dfFull = dfFull.withColumn("road_speed", F.col("road_speed").cast("int"))
         dfFull = dfFull.withColumn("direction", F.col("direction").cast("smallint"))
         dfFull = dfFull.withColumn("road_size", F.col("road_size").cast("int"))
 
+        print(f'Size of full: {dfFull.count()}')
+        
         # limit time to 1 minute before the last timestamp
         LastTimeStamp = LastTimeStamp - backInTime
         print(f'LimitTime: {LastTimeStamp}')

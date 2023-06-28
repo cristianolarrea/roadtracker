@@ -181,5 +181,5 @@ Finally, run
 ```
    spark-submit \
       --packages org.mongodb:mongodb-driver:3.12.11,com.amazon.redshift:redshift-jdbc42:2.1.0.12,org.mongodb.spark:mongo-spark-connector_2.12:10.1.1 \
-       analysisMongo.py 
+       analysis.py 
 ```
