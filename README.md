@@ -74,7 +74,7 @@ every 500ms.
 
 # IN AWS
 
-All the process of cloud implementation is described on the following topics, but can be viewed on (this video)[insert_url_here].  
+All the process of cloud implementation is described on the following topics, but can be viewed on (this video)[https://drive.google.com/file/d/1BVtLlvMsgf89daFQ1oCQigZwmdOsos7f/view?usp=sharing].  
 
 ## Introduction
 
@@ -114,7 +114,6 @@ redshift create-cluster --node-type dc2.large --number-of-nodes 2 --master-usern
 With the cluster created we open the VPC to our IP and connect in python with the endpoint.
 To complete the redshift deployment we run the python script ```create_redshift.py```
 ### Deploy docker container
-> TODO
 > 
 from the roadtracker folder:
 ```
