@@ -112,8 +112,22 @@ To create the redshift database, that is our datasource for ETL, run
 python3 aws/create_redshift.py
 ```
 
-### Deploy docker container into ECS
+### Deploy docker container
 > TODO
+> 
+from the roadtracker folder:
+```
+cd docker
+```
+
+```docker build -f subscribe.Dockerfile -p subscribe .```
+```docker build -f mock.Dockerfile -p mock .```
+```docker build -f topic.Dockerfile -p topic .```
+
+Then the user have to manually set the number of instances in the docker-compose.yaml file updating the NUM_ROADS
+
+```docker compose up```
+
 
 ### Deploy mongodb database and dashboard into AWS EC2
 Search for "EC2" in the search bar and click on the service. Click on "Execute instances". Give a name for instance and set this caracteristics:
