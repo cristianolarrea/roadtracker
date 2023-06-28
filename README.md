@@ -153,7 +153,7 @@ Then, click in "Execute instance".
 
 Then, you need to setup the ports to access the EC2 via browser and via ETL to send data for Mongodb. For this, go to the secutiry group
 and verify the inbound rules. If the rules below don't exists, create them.
-![ec2-inbound-rule](docs/ec2-inbound-rule.png)
+![ec2-inbound-rule](docs/ec2-inbound-rules.png)
 
 Now, you can access the EC2. To do this, open a terminal where you download your key-pair file and run
 ```
